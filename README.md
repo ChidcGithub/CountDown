@@ -1,3 +1,7 @@
+# Warning: This application is just designed for fun!
+
+---
+
 # Countdown
 
 A death countdown app for entertainment purposes only. This app displays a countdown timer showing years, months, days, hours, minutes, and seconds.
