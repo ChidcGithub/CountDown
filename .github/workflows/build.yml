@@ -39,6 +39,21 @@ jobs:
           name: apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
+      - name: Delete existing tag if exists
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: 'tags/v1.0.0'
+              });
+            } catch (e) {
+              console.log('Tag does not exist, will create new one');
+            }
+
       - name: Create Git Tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/github-script@v7
@@ -64,6 +79,7 @@ jobs:
             - Hidden developer mode with Search Users feature
             - Unique countdown based on username, birth date, and device ID
             - Recovery detection with flash and vibration on reinstall
+            - UI fixes: center numbers, button text color, top-left tap area
           files: build/app/outputs/flutter-apk/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
