@@ -291,10 +291,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     disabledBackgroundColor: Colors.grey.shade800,
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.grey,
                   ),
-                  child: const Text(
+                  child: Text(
                     'CONTINUE',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: agreed ? Colors.white : Colors.grey),
                   ),
                 ),
               ),
@@ -445,10 +447,12 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     disabledBackgroundColor: Colors.grey.shade800,
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.grey,
                   ),
-                  child: const Text(
+                  child: Text(
                     'START',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _nameController.text.isNotEmpty && _selectedDate != null ? Colors.white : Colors.grey),
                   ),
                 ),
               ),
@@ -534,62 +538,68 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTap: _handleTopLeftClick,
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  const SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      widget.username.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                        letterSpacing: 4,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'BORN: ${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  const Spacer(),
-                  ...items.asMap().entries.map((entry) {
-                    final item = entry.value;
-                    final isZero = (item['value'] as int) <= 0;
-                    return _CountdownRow(
-                      label: item['label'] as String,
-                      value: item['value'] as int,
-                      isZero: isZero,
-                    );
-                  }),
-                  const Spacer(),
-                ],
+      body: SafeArea(
+        child: Stack(
+          children: [
+            GestureDetector(
+              onTap: _handleTopLeftClick,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 100,
+                height: 100,
+                color: Colors.transparent,
               ),
-              if (_showSettingsIcon)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: IconButton(
-                      icon: const Icon(Icons.settings, color: Colors.red, size: 32),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                        );
-                      },
+            ),
+            Column(
+              children: [
+                const SizedBox(height: 20),
+                Center(
+                  child: Text(
+                    widget.username.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                      letterSpacing: 4,
                     ),
                   ),
                 ),
-            ],
-          ),
+                const SizedBox(height: 10),
+                Text(
+                  'BORN: ${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+                const Spacer(),
+                ...items.asMap().entries.map((entry) {
+                  final item = entry.value;
+                  final isZero = (item['value'] as int) <= 0;
+                  return _CountdownRow(
+                    label: item['label'] as String,
+                    value: item['value'] as int,
+                    isZero: isZero,
+                  );
+                }),
+                const Spacer(),
+              ],
+            ),
+            if (_showSettingsIcon)
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.red, size: 32),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      );
+                    },
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -612,15 +622,17 @@ class _CountdownRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Expanded(
+          SizedBox(
+            width: 200,
             child: Text(
               value.toString().padLeft(3, '0'),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 56,
+                fontSize: 72,
                 fontWeight: FontWeight.w900,
                 color: isZero ? Colors.grey : Colors.red,
                 height: 1,
@@ -631,7 +643,7 @@ class _CountdownRow extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w500,
               color: isZero ? Colors.grey.shade600 : Colors.red.shade300,
             ),
