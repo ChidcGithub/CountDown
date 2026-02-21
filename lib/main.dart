@@ -3,6 +3,41 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
+
+String _generateUniqueId() {
+  final uuid = const Uuid();
+  return uuid.v4();
+}
+
+int _generateHash(String input) {
+  var hash = 0;
+  for (var i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.codeUnitAt(i);
+    hash = hash & 0xFFFFFFFF;
+  }
+  return hash;
+}
+
+DateTime _calculateDeathDate(String username, DateTime birthDate, String deviceId) {
+  final combined = '$username:${birthDate.toIso8601String()}:$deviceId';
+  final hash = _generateHash(combined);
+  final random = Random(hash);
+  
+  final age = random.nextInt(41) + 60;
+  
+  return birthDate.add(Duration(days: 365 * age));
+}
+
+Future<String> _getOrCreateDeviceId() async {
+  final prefs = await SharedPreferences.getInstance();
+  String? deviceId = prefs.getString('deviceId');
+  if (deviceId == null) {
+    deviceId = _generateUniqueId();
+    await prefs.setString('deviceId', deviceId);
+  }
+  return deviceId;
+}
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,11 +91,12 @@ class _SplashScreenState extends State<SplashScreen> {
     if (hasSeenWelcome) {
       final username = prefs.getString('username');
       final birthDate = prefs.getString('birthDate');
+      final deathDate = prefs.getString('deathDate');
       
-      if (username != null && birthDate != null) {
+      if (username != null && birthDate != null && deathDate != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => MainCountdownScreen(username: username, birthDate: birthDate)),
+          MaterialPageRoute(builder: (_) => MainCountdownScreen(username: username, birthDate: birthDate, deathDate: deathDate)),
         );
       } else {
         Navigator.pushReplacement(
@@ -331,8 +367,18 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                   onPressed: _nameController.text.isNotEmpty && _selectedDate != null
                       ? () async {
                           final prefs = await SharedPreferences.getInstance();
+                          final deviceId = await _getOrCreateDeviceId();
+                          
+                          final deathDate = _calculateDeathDate(
+                            _nameController.text,
+                            _selectedDate!,
+                            deviceId,
+                          );
+                          
                           await prefs.setString('username', _nameController.text);
                           await prefs.setString('birthDate', _selectedDate!.toIso8601String());
+                          await prefs.setString('deathDate', deathDate.toIso8601String());
+                          
                           if (!mounted) return;
                           Navigator.pushReplacement(
                             context,
@@ -340,6 +386,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                               builder: (_) => MainCountdownScreen(
                                 username: _nameController.text,
                                 birthDate: _selectedDate!.toIso8601String(),
+                                deathDate: deathDate.toIso8601String(),
                               ),
                             ),
                           );
@@ -367,11 +414,13 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
 class MainCountdownScreen extends StatefulWidget {
   final String username;
   final String birthDate;
+  final String deathDate;
 
   const MainCountdownScreen({
     super.key,
     required this.username,
     required this.birthDate,
+    required this.deathDate,
   });
 
   @override
@@ -413,8 +462,8 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
   @override
   Widget build(BuildContext context) {
     final birthDate = DateTime.parse(widget.birthDate);
+    final deathDate = DateTime.parse(widget.deathDate);
     final now = DateTime.now();
-    final deathDate = birthDate.add(const Duration(days: 365 * 80));
     final difference = deathDate.difference(now);
 
     final years = difference.inDays ~/ 365;
