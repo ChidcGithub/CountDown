@@ -39,6 +39,32 @@ jobs:
           name: apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
+      - name: Get previous version
+        id: version
+        run: |
+          if [ -f version.txt ]; then
+            PREV_VERSION=$(cat version.txt)
+          else
+            PREV_VERSION="0.0.0"
+          fi
+          IFS='.' read -ra VERSION_PARTS <<< "$PREV_VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+          PATCH=$((PATCH + 1))
+          if [ $PATCH -ge 10 ]; then
+            PATCH=0
+            MINOR=$((MINOR + 1))
+          fi
+          if [ $MINOR -ge 10 ]; then
+            MINOR=0
+            MAJOR=$((MAJOR + 1))
+          fi
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "$NEW_VERSION" > version.txt
+        shell: bash
+
       - name: Delete existing tag if exists
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/github-script@v7
@@ -48,7 +74,7 @@ jobs:
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: 'tags/v1.0.0'
+                ref: 'tags/v${{ steps.version.outputs.new_version }}'
               });
             } catch (e) {
               console.log('Tag does not exist, will create new one');
@@ -62,7 +88,7 @@ jobs:
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: 'refs/tags/v1.0.0',
+              ref: 'refs/tags/v${{ steps.version.outputs.new_version }}',
               sha: context.sha
             })
           
@@ -70,16 +96,12 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
+          tag_name: v${{ steps.version.outputs.new_version }}
           body: |
-            ## Release Notes
-            - Initial release of Countdown app
-            - Death countdown timer with 6 rows (Year, Month, Day, Hour, Minute, Second)
-            - User agreement and setup flow
-            - Hidden developer mode with Search Users feature
-            - Unique countdown based on username, birth date, and device ID
+            ## Release v${{ steps.version.outputs.new_version }}
+            - Death countdown app with unique timer based on username, birth date, and device ID
             - Recovery detection with flash and vibration on reinstall
-            - UI fixes: center numbers, button text color, top-left tap area
+            - UI improvements and bug fixes
           files: build/app/outputs/flutter-apk/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
