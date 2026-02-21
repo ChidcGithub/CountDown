@@ -627,24 +627,24 @@ class _CountdownRow extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         children: [
           SizedBox(
-            width: 200,
+            width: 220,
             child: Text(
               value.toString().padLeft(3, '0'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 72,
+                fontSize: 84,
                 fontWeight: FontWeight.w900,
                 color: isZero ? Colors.grey : Colors.red,
                 height: 1,
               ),
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
           Text(
             label,
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
               color: isZero ? Colors.grey.shade600 : Colors.red.shade300,
             ),
           ),
@@ -665,6 +665,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _versionClickCount = 0;
   int _titleClickCount = 0;
   bool _developerMode = false;
+  bool _justEnabled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -676,9 +677,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             _titleClickCount++;
             if (_developerMode && _versionClickCount >= 3 && _titleClickCount >= 5) {
-              setState(() => _developerMode = false);
-              _versionClickCount = 0;
-              _titleClickCount = 0;
+              setState(() {
+                _developerMode = false;
+                _versionClickCount = 0;
+                _titleClickCount = 0;
+              });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Developer mode disabled')),
               );
@@ -699,14 +702,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '1.0.0',
             onTap: () {
               _versionClickCount++;
-              if (_versionClickCount >= 3 && _titleClickCount >= 5) {
-                setState(() => _developerMode = true);
+              if (_versionClickCount >= 3 && _titleClickCount >= 5 && !_developerMode) {
+                setState(() {
+                  _developerMode = true;
+                  _justEnabled = true;
+                });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Developer mode enabled')),
+                );
+              } else if (!_justEnabled && !_developerMode) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Tap Settings title ${5 - _titleClickCount} more times to enable developer mode')),
                 );
               }
             },
           ),
+          if (!_developerMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'Tip: Tap Version 3 times + Settings title 5 times to enable developer mode',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              ),
+            ),
           _buildItem(
             'Developer',
             _developerMode ? '死神' : 'ChidcGithub',
