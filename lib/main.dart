@@ -104,13 +104,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _checkFirstTime() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasSeenWelcome = prefs.getBool('hasSeenWelcome') ?? false;
-    final hasShownRecovery = prefs.getBool('hasShownRecovery') ?? false;
+    final username = prefs.getString('username');
+    final birthDate = prefs.getString('birthDate');
+    final deathDate = prefs.getString('deathDate');
     final deviceId = prefs.getString('deviceId');
+    final hasShownRecovery = prefs.getBool('hasShownRecovery') ?? false;
     
-    _isRecovery = hasSeenWelcome && deviceId != null && !hasShownRecovery;
+    final hasExistingData = username != null && birthDate != null && deathDate != null && deviceId != null;
     
-    if (_isRecovery) {
+    if (hasExistingData && !hasShownRecovery) {
+      _isRecovery = true;
       _triggerRecoveryEffect();
       await prefs.setBool('hasShownRecovery', true);
     }
@@ -119,27 +122,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     
     if (!mounted) return;
     
-    if (hasSeenWelcome) {
-      final username = prefs.getString('username');
-      final birthDate = prefs.getString('birthDate');
-      final deathDate = prefs.getString('deathDate');
-      
-      if (username != null && birthDate != null && deathDate != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainCountdownScreen(username: username, birthDate: birthDate, deathDate: deathDate)),
-        );
-      } else {
+    if (hasExistingData) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainCountdownScreen(username: username, birthDate: birthDate, deathDate: deathDate)),
+      );
+    } else {
+      final hasSeenWelcome = prefs.getBool('hasSeenWelcome') ?? false;
+      if (hasSeenWelcome) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const UserSetupScreen()),
         );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+        );
       }
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-      );
     }
   }
 
