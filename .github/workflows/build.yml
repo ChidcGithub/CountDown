@@ -36,21 +36,11 @@ jobs:
           name: apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - name: Get version
-        id: version
-        run: echo "version=1.0.0" >> $GITHUB_OUTPUT
-
-      - name: Create Git Tag
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git tag -a v${{ steps.version.outputs.version }} -m "Release v${{ steps.version.outputs.version }}"
-          git push origin v${{ steps.version.outputs.version }}
-          
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v1.0.0
           body: |
             ## Release Notes
             - Initial release of Countdown app
@@ -58,6 +48,7 @@ jobs:
             - User agreement and setup flow
             - Hidden developer mode with Search Users feature
             - Unique countdown based on username, birth date, and device ID
+            - Recovery detection with flash and vibration on reinstall
           files: build/app/outputs/flutter-apk/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
