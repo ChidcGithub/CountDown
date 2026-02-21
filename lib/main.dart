@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -73,18 +74,48 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _flashController;
+  bool _isRecovery = false;
+
   @override
   void initState() {
     super.initState();
+    _flashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _checkFirstTime();
+  }
+
+  @override
+  void dispose() {
+    _flashController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _triggerRecoveryEffect() async {
+    for (int i = 0; i < 5; i++) {
+      await HapticFeedback.vibrate();
+      _flashController.forward().then((_) => _flashController.reverse());
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
   }
 
   Future<void> _checkFirstTime() async {
     final prefs = await SharedPreferences.getInstance();
     final hasSeenWelcome = prefs.getBool('hasSeenWelcome') ?? false;
+    final hasShownRecovery = prefs.getBool('hasShownRecovery') ?? false;
+    final deviceId = prefs.getString('deviceId');
     
-    await Future.delayed(const Duration(seconds: 2));
+    _isRecovery = hasSeenWelcome && deviceId != null && !hasShownRecovery;
+    
+    if (_isRecovery) {
+      _triggerRecoveryEffect();
+      await prefs.setBool('hasShownRecovery', true);
+    }
+    
+    await Future.delayed(Duration(seconds: _isRecovery ? 3 : 2));
     
     if (!mounted) return;
     
@@ -114,26 +145,45 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.hourglass_bottom, size: 80, color: Colors.red),
-            const SizedBox(height: 20),
-            const Text(
-              'COUNTDOWN',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w900,
-                color: Colors.red,
-                letterSpacing: 10,
-              ),
+    return AnimatedBuilder(
+      animation: _flashController,
+      builder: (context, child) {
+        return Scaffold(
+          backgroundColor: _flashController.value > 0.5 ? Colors.red : Colors.black,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _isRecovery ? Icons.restore : Icons.hourglass_bottom, 
+                  size: 80, 
+                  color: _flashController.value > 0.5 ? Colors.black : Colors.red
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  _isRecovery ? 'COUNTDOWN RESTORED' : 'COUNTDOWN',
+                  style: TextStyle(
+                    fontSize: _isRecovery ? 28 : 40,
+                    fontWeight: FontWeight.w900,
+                    color: _flashController.value > 0.5 ? Colors.black : Colors.red,
+                    letterSpacing: 10,
+                  ),
+                ),
+                if (_isRecovery) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    'Your countdown has been recovered',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _flashController.value > 0.5 ? Colors.black54 : Colors.white54,
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
