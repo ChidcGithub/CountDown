@@ -329,9 +329,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: agreed ? () async {
+                    final navigator = Navigator.of(context);
                     await StorageService.setHasSeenWelcome(true);
                     if (!mounted) return;
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserSetupScreen()));
+                    navigator.pushReplacement(MaterialPageRoute(builder: (_) => const UserSetupScreen()));
                   } : null,
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800, foregroundColor: Colors.white, disabledForegroundColor: Colors.grey),
                   child: Text('CONTINUE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: agreed ? Colors.white : Colors.grey)),
@@ -424,11 +425,12 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: isValid ? () async {
+                    final navigator = Navigator.of(context);
                     final deviceId = (await StorageService.getDeviceId())!;
                     final deathDate = calculateDeathDate(_nameController.text, _selectedDate!, deviceId);
                     await StorageService.saveUserData(_nameController.text, _selectedDate!, deathDate);
                     if (!mounted) return;
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainCountdownScreen(data: CountdownData(username: _nameController.text, birthDate: _selectedDate!, deathDate: deathDate))));
+                    navigator.pushReplacement(MaterialPageRoute(builder: (_) => MainCountdownScreen(data: CountdownData(username: _nameController.text, birthDate: _selectedDate!, deathDate: deathDate))));
                   } : null,
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800, foregroundColor: Colors.white, disabledForegroundColor: Colors.grey),
                   child: Text('START', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isValid ? Colors.white : Colors.grey)),
@@ -492,12 +494,19 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
     final seconds = data.seconds;
     
     int grayFromIndex = 6;
-    if (years <= 0) grayFromIndex = 0;
-    else if (months <= 0) grayFromIndex = 1;
-    else if (days <= 0) grayFromIndex = 2;
-    else if (hours <= 0) grayFromIndex = 3;
-    else if (minutes <= 0) grayFromIndex = 4;
-    else if (seconds <= 0) grayFromIndex = 5;
+    if (years <= 0) {
+      grayFromIndex = 0;
+    } else if (months <= 0) {
+      grayFromIndex = 1;
+    } else if (days <= 0) {
+      grayFromIndex = 2;
+    } else if (hours <= 0) {
+      grayFromIndex = 3;
+    } else if (minutes <= 0) {
+      grayFromIndex = 4;
+    } else if (seconds <= 0) {
+      grayFromIndex = 5;
+    }
     
     final items = [
       ('YEAR', years, 0),
@@ -724,8 +733,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   final _scrollController = ScrollController();
   bool _loading = true;
   bool _loadingMore = false;
-  List<Map<String, dynamic>> _users = [];
-  int _loadedCount = 0;
+  final List<Map<String, dynamic>> _users = [];
   static const int _pageSize = 30;
 
   final List<String> _firstNames = [
@@ -814,7 +822,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     
     setState(() {
       _users.addAll(newUsers);
-      _loadedCount += _pageSize;
     });
   }
 
