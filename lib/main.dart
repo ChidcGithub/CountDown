@@ -148,7 +148,8 @@ DateTime calculateDeathDate(String username, DateTime birthDate, String deviceId
     hash = hash & 0xFFFFFFFF;
   }
   final age = (hash % (AppConstants.maxAge - AppConstants.minAge)) + AppConstants.minAge;
-  return birthDate.add(Duration(days: 365 * age));
+  final milliseconds = hash % 1000;
+  return DateTime(birthDate.year + age, birthDate.month, birthDate.day, 0, 0, 0, milliseconds);
 }
 
 void main() {
