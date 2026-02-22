@@ -170,7 +170,43 @@ class CountdownApp extends StatelessWidget {
           secondary: Colors.red,
         ),
       ),
-      home: const SplashScreen(),
+      home: const InitialLoader(),
+    );
+  }
+}
+
+class InitialLoader extends StatefulWidget {
+  const InitialLoader({super.key});
+
+  @override
+  State<InitialLoader> createState() => _InitialLoaderState();
+}
+
+class _InitialLoaderState extends State<InitialLoader> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAndNavigate();
+  }
+
+  Future<void> _checkAndNavigate() async {
+    final userData = await StorageService.loadUserData();
+    if (!mounted) return;
+
+    if (userData != null) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainCountdownScreen(data: userData)));
+    } else {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: CircularProgressIndicator(color: Colors.red),
+      ),
     );
   }
 }
@@ -586,16 +622,17 @@ class _CountdownRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: 180,
+            width: 200,
             child: Text(
               value.toString().padLeft(3, '0'),
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontFamily: GoogleFonts.roboto().fontFamily,
-                fontSize: 80,
+                fontSize: 100,
                 fontWeight: FontWeight.w900,
                 color: isZero ? Colors.grey : Colors.red,
                 height: 1,
+                letterSpacing: -4,
               ),
             ),
           ),
@@ -772,6 +809,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _loadingMore = false;
   final List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _filteredUsers = [];
+  String _currentUsername = '';
+  int? _currentUserIndex;
   static const int _pageSize = 30;
 
   final List<String> _firstNames = [
@@ -801,7 +840,17 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadCurrentUser();
     _generateUsers();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final userData = await StorageService.loadUserData();
+    if (userData != null && mounted) {
+      setState(() {
+        _currentUsername = userData.username;
+      });
+    }
   }
 
   @override
@@ -874,9 +923,36 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   void _updateFilteredUsers() {
     if (_searchController.text.isEmpty) {
       _filteredUsers = List.from(_users);
+      _currentUserIndex = null;
     } else {
       final query = _searchController.text.toLowerCase();
       _filteredUsers = _users.where((u) => u['username'].toString().toLowerCase().contains(query)).toList();
+      _currentUserIndex = null;
+      for (int i = 0; i < _filteredUsers.length; i++) {
+        if (_filteredUsers[i]['username'] == _currentUsername) {
+          _currentUserIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
+  void _scrollToCurrentUser() {
+    if (_currentUserIndex != null && _currentUserIndex! < _filteredUsers.length) {
+      _scrollController.animateTo(
+        _currentUserIndex! * 72.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      final idx = _users.indexWhere((u) => u['username'] == _currentUsername);
+      if (idx != -1) {
+        _scrollController.animateTo(
+          idx * 72.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
@@ -1012,17 +1088,31 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search username...',
-                hintStyle: TextStyle(color: Colors.grey.shade600),
-                prefixIcon: const Icon(Icons.search, color: Colors.red),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red.shade800), borderRadius: BorderRadius.circular(8)),
-                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-              ),
-              onChanged: (_) => setState(() {}),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search username...',
+                      hintStyle: TextStyle(color: Colors.grey.shade600),
+                      prefixIcon: const Icon(Icons.search, color: Colors.red),
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red.shade800), borderRadius: BorderRadius.circular(8)),
+                      focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                if (_searchController.text.isNotEmpty && _currentUserIndex != null) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.my_location, color: Colors.red),
+                    onPressed: _scrollToCurrentUser,
+                    tooltip: 'Locate your username',
+                  ),
+                ],
+              ],
             ),
           ),
           if (_loading)
@@ -1037,8 +1127,22 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                     return const Center(child: CircularProgressIndicator(color: Colors.red));
                   }
                   final user = _filteredUsers[index];
+                  final isCurrentUser = user['username'] == _currentUsername;
                   return ListTile(
-                    title: Text(user['username'], style: const TextStyle(color: Colors.white)),
+                    tileColor: isCurrentUser ? Colors.red.withValues(alpha: 0.2) : null,
+                    title: Row(
+                      children: [
+                        Text(user['username'], style: TextStyle(color: isCurrentUser ? Colors.red : Colors.white, fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal)),
+                        if (isCurrentUser) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('YOU', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ],
+                    ),
                     subtitle: Text(user['cachedCountdown'] ?? '...', style: const TextStyle(color: Colors.red)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

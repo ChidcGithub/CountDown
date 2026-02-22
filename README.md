@@ -9,11 +9,20 @@ A death countdown app for entertainment purposes only. This app displays a count
 ## Features
 
 - Death countdown timer with 6 rows (Year, Month, Day, Hour, Minute, Second)
+- Ultra bold countdown numbers for better visibility
+- Smart startup: automatically detects existing data and skips welcome screen
 - First-time welcome screen with user agreement
 - Username and birth date setup
-- Black background with red/gray countdown numbers
+- Black background with red/gray countdown numbers (gray starts from first zero value)
 - Hidden developer mode (tap version 3 times + settings title 5 times)
-- Search Users feature in developer mode
+- Search Users feature in developer mode:
+  - Infinite scroll lazy loading
+  - 200+ common English names
+  - Real-time user generation
+  - Search functionality with location button to find your username
+  - Add random users
+  - Edit countdown and save
+  - Sync to server simulation
 
 ## Important Disclaimer
 
@@ -47,7 +56,13 @@ To enable developer mode:
 2. Tap on Version 3 times
 3. Tap on Settings title 5 times
 
-In developer mode, you can access "Search Users" feature.
+In developer mode, you can access "Search Users" feature where you can:
+- Browse generated users with infinite scroll
+- Search for specific usernames
+- Click the location button to quickly find your username in the list
+- Add random users
+- Edit countdown timers
+- Sync user data to your device
 
 ## License
 
