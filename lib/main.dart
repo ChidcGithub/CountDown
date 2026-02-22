@@ -519,6 +519,21 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
   int _clickCount = 0;
   DateTime? _lastClickTime;
   bool _showSettings = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   void _handleTap() {
     final now = DateTime.now();
