@@ -172,6 +172,7 @@ class CountdownApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const seedColor = Color(0xFFFF0000);
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
@@ -179,7 +180,7 @@ class CountdownApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.red,
+          seedColor: seedColor,
           brightness: Brightness.dark,
           surface: Colors.black,
         ),
