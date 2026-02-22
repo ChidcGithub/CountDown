@@ -882,18 +882,58 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
   }
 
-  void _applyToMainScreen(Map<String, dynamic> user) async {
+  void _syncToServer(Map<String, dynamic> user) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        backgroundColor: Colors.black,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.red),
+            SizedBox(height: 16),
+            Text('Syncing to server...', style: TextStyle(color: Colors.white)),
+            SizedBox(height: 8),
+            Text('Uploading user data', style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+
+    await Future.delayed(Duration(milliseconds: 1500 + Random().nextInt(1500)));
+
+    if (!mounted) return;
+    Navigator.pop(context);
+
     final deathDate = DateTime.parse(user['deathDate']);
     final now = DateTime.now();
     final rand = Random();
     final birthDate = now.subtract(Duration(days: 365 * 20 + rand.nextInt(365 * 50)));
     
     await StorageService.saveUserData(user['username'], birthDate, deathDate);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Applied ${user['username']}\'s countdown to main screen'), backgroundColor: Colors.red),
-      );
-    }
+    
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.black,
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Sync Complete', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        content: Text("${user['username']}'s countdown has been synced to your device", style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -947,7 +987,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(icon: const Icon(Icons.play_arrow, color: Colors.red), onPressed: () => _applyToMainScreen(user), tooltip: 'Apply to main screen'),
+                        IconButton(icon: const Icon(Icons.cloud_upload, color: Colors.red), onPressed: () => _syncToServer(user), tooltip: 'Sync to Server'),
                         IconButton(icon: const Icon(Icons.edit, color: Colors.red), onPressed: () => _showEditDialog(user)),
                       ],
                     ),
