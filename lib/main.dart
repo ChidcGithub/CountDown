@@ -359,13 +359,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 'IMPORTANT NOTICE\n\n'
                                 'Please read this User Agreement carefully before using this application.\n\n'
                                 '1. ENTERTAINMENT PURPOSE ONLY\n'
-                                'This application is designed solely for entertainment purposes. The countdown timer displayed is a fictional simulation and should not be interpreted as any form of prediction, prophecy, or factual information about an individual\'s lifespan.\n\n'
+                                "This application is designed solely for entertainment purposes. The countdown timer displayed is a fictional simulation and should not be interpreted as any form of prediction, prophecy, or factual information about an individual's lifespan.\n\n"
                                 '2. NO REAL DATA USED\n'
                                 'The countdown calculation is based on a deterministic algorithm that combines username, birth date, and device identification.\n\n'
                                 '3. NO LIABILITY\n'
                                 'The developer shall not be held liable for any psychological, emotional, or behavioral changes that may occur as a result of using this application.\n\n'
                                 '4. FORCE MAJEURE CLAUSE\n'
-                                'If you make life decisions based on this application\'s countdown and experience unexpected consequences, such events shall be considered force majeure.\n\n'
+                                "If you make life decisions based on this application's countdown and experience unexpected consequences, such events shall be considered force majeure.\n\n"
                                 '5. DATA PRIVACY\n'
                                 'This application does not collect, store, or transmit any personal information to external servers.\n\n'
                                 '6. NO NETWORK COMMUNICATION\n'
@@ -444,8 +444,8 @@ class FullAgreementScreen extends StatelessWidget {
           'PLEASE READ THIS AGREEMENT CAREFULLY BEFORE USING THIS APPLICATION. THIS IS A LEGALLY BINDING AGREEMENT BETWEEN YOU AND THE DEVELOPER. BY ACCESSING, DOWNLOADING, OR USING THIS APPLICATION, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY ALL TERMS AND CONDITIONS CONTAINED HEREIN. IF YOU DO NOT AGREE TO THESE TERMS, DO NOT USE THIS APPLICATION.\n\n'
           'SECTION 1: NATURE OF APPLICATION\n\n'
           '1.1 This application, named "Countdown," is a digital entertainment product designed solely for recreational and amusement purposes. The primary function of this application is to generate and display a simulated countdown timer based on user-provided information including but not limited to username, date of birth, and device identification data.\n\n'
-          '1.2 The countdown timer displayed by this application is a FICTIONAL AND FANTASY-BASED simulation. It does not represent, predict, forecast, or in any manner relate to the actual lifespan, mortality, or any aspect of the user\'s real-life expectancy. The developer explicitly states that the mathematical algorithm used to generate the countdown is a randomized deterministic function and bears absolutely no correlation to medical science, actuarial data, or any form of life expectancy calculation.\n\n'
-          '1.3 This application is not intended for, and should not be used for, making any life decisions, financial planning, health-related choices, or any decisions that may affect the user\'s physical or mental well-being. The user acknowledges that any interpretation of the countdown beyond entertainment is wholly unreasonable and unwarranted.\n\n'
+          "1.2 The countdown timer displayed by this application is a FICTIONAL AND FANTASY-BASED simulation. It does not represent, predict, forecast, or in any manner relate to the actual lifespan, mortality, or any aspect of the user's real-life expectancy. The developer explicitly states that the mathematical algorithm used to generate the countdown is a randomized deterministic function and bears absolutely no correlation to medical science, actuarial data, or any form of life expectancy calculation.\n\n"
+          "1.3 This application is not intended for, and should not be used for, making any life decisions, financial planning, health-related choices, or any decisions that may affect the user's physical or mental well-being. The user acknowledges that any interpretation of the countdown beyond entertainment is wholly unreasonable and unwarranted.\n\n"
           'SECTION 2: DISCLAIMER OF WARRANTIES\n\n'
           '2.1 THIS APPLICATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE DEVELOPER DOES NOT WARRANT THAT THE APPLICATION WILL MEET YOUR REQUIREMENTS, BE UNINTERRUPTED, TIMELY, SECURE, OR ERROR-FREE.\n\n'
           '2.2 THE DEVELOPER EXPRESSLY DISCLAIMS ANY AND ALL LIABILITY FOR THE ACCURACY, COMPLETENESS, LEGALITY, RELIABILITY, OR USEFULNESS OF ANY INFORMATION DISPLAYED BY THE APPLICATION. THE COUNTDOWN TIMER IS NOT BASED ON ANY SCIENTIFIC, MEDICAL, STATISTICAL, OR EMPIRICAL DATA AND SHOULD NOT BE TREATED AS SUCH.\n\n'
@@ -457,7 +457,7 @@ class FullAgreementScreen extends StatelessWidget {
           '(c) ANY INTERRUPTION OR CESSATION OF TRANSMISSION TO OR FROM THE APPLICATION;\n\n'
           '(d) ANY BUGS, VIRUSES, TROJAN HORSES, OR THE LIKE THAT MAY BE TRANSMITTED TO OR THROUGH THE APPLICATION;\n\n'
           '(e) ANY ERRORS, INACCURACIES, OR OMISSIONS IN ANY CONTENT OR INFORMATION.\n\n'
-          '3.2 NOTWITHSTANDING ANYTHING TO THE CONTRARY CONTAINED HEREIN, THE DEVELOPER\'S LIABILITY TO YOU FOR ANY CAUSE WHATSOEVER AND REGARDLESS OF THE FORM OF THE ACTION, WILL AT ALL TIMES BE LIMITED TO THE AMOUNT PAID, IF ANY, BY YOU TO THE DEVELOPER FOR THE APPLICATION DURING THE TWELVE (12) MONTHS PRECEDING THE CAUSE OF ACTION.\n\n'
+          "3.2 NOTWITHSTANDING ANYTHING TO THE CONTRARY CONTAINED HEREIN, THE DEVELOPER'S LIABILITY TO YOU FOR ANY CAUSE WHATSOEVER AND REGARDLESS OF THE FORM OF THE ACTION, WILL AT ALL TIMES BE LIMITED TO THE AMOUNT PAID, IF ANY, BY YOU TO THE DEVELOPER FOR THE APPLICATION DURING THE TWELVE (12) MONTHS PRECEDING THE CAUSE OF ACTION.\n\n"
           '3.3 THE USER SPECIFICALLY ACKNOWLEDGES THAT THE DEVELOPER SHALL NOT BE LIABLE FOR ANY DEFAMATORY, OFFENSIVE, OR ILLEGAL CONDUCT OF ANY USER OR THIRD PARTY AND THAT THE RISK OF HARM OR DAMAGE FROM THE FOREGOING RESTS ENTIRELY WITH YOU.\n\n'
           'SECTION 4: FORCE MAJEURE\n\n'
           '4.1 THE DEVELOPER SHALL NOT BE LIABLE FOR ANY FAILURE OR DELAY IN PERFORMING ITS OBLIGATIONS UNDER THIS AGREEMENT WHERE SUCH FAILURE OR DELAY RESULTS FROM ANY CAUSE THAT IS BEYOND THE REASONABLE CONTROL OF THE DEVELOPER, INCLUDING BUT NOT LIMITED TO: ACTS OF GOD, NATURAL DISASTERS, WAR, TERRORISM, RIOTS, EMBARGOES, ACTS OF CIVIL OR MILITARY AUTHORITIES, FIRE, FLOODS, ACCIDENTS, STRIKES, OR SHORTAGES OF TRANSPORTATION, FACILITIES, FUEL, ENERGY, LABOR, OR MATERIALS.\n\n'
@@ -494,8 +494,8 @@ class FullAgreementScreen extends StatelessWidget {
           '8.1 YOU AGREE NOT TO USE THE APPLICATION TO:\n\n'
           '(a) ENGAGE IN ANY UNLAWFUL ACTIVITY OR INFRINGE UPON THE RIGHTS OF OTHERS;\n\n'
           '(b) GENERATE OR DISTRIBUTE MALICIOUS CODE, VIRUSES, OR OTHER HARMFUL SOFTWARE;\n\n'
-          '(c) ATTEMPT TO GAIN UNAUTHORIZED ACCESS TO ANY SYSTEMS, NETWORKS, OR DATA;\n\n'
-          '(d) INTERFERE WITH OR DISRUPT THE APPLICATION\'S OPERATION;\n\n'
+          "(c) ATTEMPT TO GAIN UNAUTHORIZED ACCESS TO ANY SYSTEMS, NETWORKS, OR DATA;\n\n"
+          "(d) INTERFERE WITH OR DISRUPT THE APPLICATION'S OPERATION;\n\n"
           '(e) IMITATE OR COPY THE APPLICATION OR ITS FUNCTIONALITIES FOR COMMERCIAL PURPOSES;\n\n'
           '(f) USE THE APPLICATION IN A MANNER THAT COULD DAMAGE, DISABLE, OVERBURDEN, OR IMPAIR THE APPLICATION OR ANY SERVER OR NETWORK;\n\n'
           '(g) REVERSE ENGINEER, DECOMPILE, DISASSEMBLE, OR OTHERWISE ATTEMPT TO DERIVE THE SOURCE CODE OF THE APPLICATION;\n\n'
@@ -511,7 +511,7 @@ class FullAgreementScreen extends StatelessWidget {
           '10.3 YOU MAY TERMINATE THIS AGREEMENT AT ANY TIME BY CEASING TO USE THE APPLICATION AND UNINSTALLING IT FROM YOUR DEVICE.\n\n'
           '10.4 UPON TERMINATION OF THIS AGREEMENT, ALL PROVISIONS THAT BY THEIR NATURE SHOULD SURVIVE TERMINATION SHALL SURVIVE, INCLUDING BUT NOT LIMITED TO: OWNERSHIP PROVISIONS, DISCLAIMER OF WARRANTIES, LIMITATION OF LIABILITY, INDEMNIFICATION, AND INTELLECTUAL PROPERTY RIGHTS.\n\n'
           'SECTION 11: INDEMNIFICATION\n\n'
-          '11.1 YOU AGREE TO INDEMNIFY, DEFEND, AND HOLD HARMLESS THE DEVELOPER AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, AND AFFILIATES FROM AND AGAINST ANY AND ALL CLAIMS, DAMAGES, LOSSES, LIABILITIES, COSTS, AND EXPENSES (INCLUDING REASONABLE ATTORNEYS\' FEES) ARISING OUT OF OR RELATING TO:\n\n'
+          "11.1 YOU AGREE TO INDEMNIFY, DEFEND, AND HOLD HARMLESS THE DEVELOPER AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, AND AFFILIATES FROM AND AGAINST ANY AND ALL CLAIMS, DAMAGES, LOSSES, LIABILITIES, COSTS, AND EXPENSES (INCLUDING REASONABLE ATTORNEYS' FEES) ARISING OUT OF OR RELATING TO:\n\n"
           '(a) YOUR USE OF THE APPLICATION;\n\n'
           '(b) YOUR VIOLATION OF THIS AGREEMENT;\n\n'
           '(c) YOUR VIOLATION OF ANY RIGHTS OF A THIRD PARTY;\n\n'
@@ -859,6 +859,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('Delete All Data', style: TextStyle(color: Colors.red)),
               trailing: const Icon(Icons.delete_forever, color: Colors.red),
               onTap: () async {
+                final navigator = Navigator.of(context);
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -874,7 +875,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (confirm == true && mounted) {
                   await StorageService.clearAllData();
                   if (!mounted) return;
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  navigator.popUntil((route) => route.isFirst);
                 }
               },
             ),
