@@ -47,12 +47,15 @@ class CountdownData {
     required this.deathDate,
   });
 
-  int get years => deathDate.difference(DateTime.now()).inDays ~/ 365;
-  int get months => (deathDate.difference(DateTime.now()).inDays % 365) ~/ 30;
-  int get days => (deathDate.difference(DateTime.now()).inDays % 365) % 30;
-  int get hours => deathDate.difference(DateTime.now()).inHours % 24;
-  int get minutes => deathDate.difference(DateTime.now()).inMinutes % 60;
-  int get seconds => deathDate.difference(DateTime.now()).inSeconds % 60;
+  Duration get _diff => deathDate.difference(DateTime.now());
+
+  int get years => _diff.inDays ~/ 365;
+  int get months => (_diff.inDays % 365) ~/ 30;
+  int get days => (_diff.inDays % 365) % 30;
+  int get hours => _diff.inHours % 24;
+  int get minutes => _diff.inMinutes % 60;
+  int get seconds => _diff.inSeconds % 60;
+  int get milliseconds => _diff.inMilliseconds % 1000;
 }
 
 class StorageService {
@@ -836,12 +839,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   final List<String> _excludedNames = ['admin', 'root', 'administrator', 'system', 'superuser', 'test', 'guest', 'user', 'moderator', 'owner'];
 
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadCurrentUser();
     _generateUsers();
+    _refreshTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _loadCurrentUser() async {
@@ -855,6 +865,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _searchController.dispose();
     _editController.dispose();
     _scrollController.dispose();
@@ -976,8 +987,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     final hours = diff.inHours % 24;
     final minutes = diff.inMinutes % 60;
     final seconds = diff.inSeconds % 60;
+    final milliseconds = diff.inMilliseconds % 1000;
     
-    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
+    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms';
   }
 
   void _generateRandomUser() {
