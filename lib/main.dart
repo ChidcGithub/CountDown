@@ -146,7 +146,7 @@ class StorageService {
 }
 
 DateTime calculateDeathDate(String username, DateTime birthDate, String deviceId) {
-  final combined = '$username:${birthDate.toIso8601String()}:$deviceId';
+  final combined = '$username:${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}:$deviceId';
   var hash = 0;
   for (var i = 0; i < combined.length; i++) {
     hash = ((hash << 5) - hash) + combined.codeUnitAt(i);
