@@ -176,10 +176,14 @@ class CountdownApp extends StatelessWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
-        primaryColor: Colors.black,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red,
+          brightness: Brightness.dark,
+          surface: Colors.black,
+        ),
         scaffoldBackgroundColor: Colors.black,
-        colorScheme: const ColorScheme.dark(primary: Colors.red, secondary: Colors.red),
       ),
       home: const InitialLoader(),
     );
@@ -594,7 +598,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     initialDate: DateTime(2000),
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
-                    builder: (context, child) => Theme(data: ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: Colors.red, surface: Colors.black)), child: child!),
+                    builder: (context, child) => Theme(data: ThemeData.dark(useMaterial3: true), child: child!),
                   );
                   if (date != null) setState(() => _selectedDate = date);
                 },
