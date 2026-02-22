@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes (required for release)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -121,12 +126,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.new_version }}
-          body: |
-            ## Release v${{ steps.version.outputs.new_version }}
-            - Death countdown app with unique timer based on username, birth date, and device ID
-            - Recovery detection with flash and vibration on reinstall
-            - Enhanced Search Users with infinite scroll, real-time generation, and apply to main screen
-            - UI improvements and bug fixes
+          body: ${{ github.event.inputs.release_notes }}
           files: build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
