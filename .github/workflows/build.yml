@@ -31,13 +31,13 @@ jobs:
         run: flutter analyze --no-fatal-infos
         
       - name: Build APK
-        run: flutter build apk --debug
+        run: flutter build apk --release
         
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Get previous version
         id: version
@@ -102,6 +102,6 @@ jobs:
             - Death countdown app with unique timer based on username, birth date, and device ID
             - Recovery detection with flash and vibration on reinstall
             - UI improvements and bug fixes
-          files: build/app/outputs/flutter-apk/app-debug.apk
+          files: build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
