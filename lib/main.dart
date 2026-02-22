@@ -11,7 +11,7 @@ class AppConstants {
   static const String packageName = 'com.death.countdown';
   static const String version = '1.0.0';
   static const String developer = 'ChidcGithub';
-  static const String developerDevMode = '死神';
+  static const String developerDevMode = 'Death God';
   static const String githubUrl = 'https://github.com/ChidcGithub/CountDown';
   
   static const int minAge = 60;
@@ -263,29 +263,62 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               const SizedBox(height: 40),
               const Text('This is purely for entertainment purposes only.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(border: Border.all(color: Colors.red.shade800), borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    const Text('User Agreement', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red)),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'By using this application, you agree to the following terms:\n\n'
-                      '1. This application is for entertainment only.\n'
-                      '2. The countdown displayed is not based on any real data.\n'
-                      '3. If you change your fate due to this countdown, there may be force majeure factors.\n'
-                      '4. This app does not upload any information to the internet, including crash reports.',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Checkbox(value: agreed, onChanged: (v) => setState(() => agreed = v ?? false), activeColor: Colors.red),
-                        const Expanded(child: Text('I agree to the terms and conditions', style: TextStyle(color: Colors.white))),
-                      ],
-                    ),
-                  ],
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(border: Border.all(color: Colors.red.shade800), borderRadius: BorderRadius.circular(12)),
+                  child: Column(
+                    children: [
+                      const Text('User Agreement', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red)),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'IMPORTANT NOTICE\n\n'
+                                'Please read this User Agreement carefully before using this application.\n\n'
+                                '1. ENTERTAINMENT PURPOSE ONLY\n'
+                                'This application is designed solely for entertainment purposes. The countdown timer displayed is a fictional simulation and should not be interpreted as any form of prediction, prophecy, or factual information about an individual\'s lifespan. The developer makes no claims regarding the accuracy of any displayed information.\n\n'
+                                '2. NO REAL DATA USED\n'
+                                'The countdown calculation is based on a deterministic algorithm that combines username, birth date, and device identification. This algorithm is not based on any medical, scientific, or statistical data. The result is randomly generated and has no connection to reality.\n\n'
+                                '3. NO LIABILITY\n'
+                                'The developer shall not be held liable for any psychological, emotional, or behavioral changes that may occur as a result of using this application. If you find the content disturbing, please discontinue use immediately.\n\n'
+                                '4. FORCE MAJEURE CLAUSE\n'
+                                'If you make life decisions based on this application\'s countdown and experience unexpected consequences, such events shall be considered force majeure. The developer assumes no responsibility for any such occurrences.\n\n'
+                                '5. DATA PRIVACY\n'
+                                'This application does not collect, store, or transmit any personal information to external servers. All data remains local on your device. The application may generate a unique device identifier for local storage purposes only.\n\n'
+                                '6. NO NETWORK COMMUNICATION\n'
+                                'This application does not connect to the internet for any purpose, including but not limited to: data synchronization, analytics, advertising, or crash reporting.\n\n'
+                                '7. USER RESPONSIBILITY\n'
+                                'You acknowledge that you are of legal age to use this application or have obtained parental/guardian consent. You accept full responsibility for your use of this application.\n\n'
+                                '8. MODIFICATION OF TERMS\n'
+                                'The developer reserves the right to modify this agreement at any time without prior notice. Continued use of the application constitutes acceptance of any modified terms.\n\n'
+                                '9. INTELLECTUAL PROPERTY\n'
+                                'All content within this application, including but not limited to code, design, and documentation, is the intellectual property of the developer.\n\n'
+                                '10. GOVERNING LAW\n'
+                                'This agreement shall be governed by and construed in accordance with applicable laws.\n\n'
+                                '11. ADDITIONAL INFORMATION\n'
+                                'For more information, updates, and detailed documentation about this application, please visit our GitHub repository:\n'
+                                'https://github.com/ChidcGithub/CountDown\n\n'
+                                'By checking the box below, you acknowledge that you have read, understood, and agree to be bound by all terms and conditions outlined in this agreement.',
+                                style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Checkbox(value: agreed, onChanged: (v) => setState(() => agreed = v ?? false), activeColor: Colors.red),
+                          const Expanded(child: Text('I have read and agree to the terms and conditions', style: TextStyle(color: Colors.white, fontSize: 12))),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -556,7 +589,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _versionClicks = 0;
   int _titleClicks = 0;
   bool _devMode = false;
-  bool _justEnabled = false;
+
+  void _enableDevMode() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const _DevModeRedScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -569,7 +618,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _titleClicks++;
             if (_devMode && _versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount) {
               setState(() { _devMode = false; _versionClicks = 0; _titleClicks = 0; });
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Developer mode disabled')));
             }
           },
           child: const Text('Settings', style: TextStyle(color: Colors.white)),
@@ -582,13 +630,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildItem('Version', AppConstants.version, onTap: () {
             _versionClicks++;
             if (_versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount && !_devMode) {
-              setState(() { _devMode = true; _justEnabled = true; });
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Developer mode enabled')));
-            } else if (!_justEnabled && !_devMode) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tap Settings title ${AppConstants.titleTapCount - _titleClicks} more times')));
+              setState(() => _devMode = true);
+              _enableDevMode();
             }
           }),
-          if (!_devMode) Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text('Tip: Tap Version ${AppConstants.versionTapCount} times + Settings title ${AppConstants.titleTapCount} times to enable developer mode', style: TextStyle(color: Colors.grey.shade600, fontSize: 12))),
           _buildItem('Developer', _devMode ? AppConstants.developerDevMode : AppConstants.developer, onTap: () async {
             final url = Uri.parse(AppConstants.githubUrl);
             if (await canLaunchUrl(url)) await launchUrl(url);
@@ -607,6 +652,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(title, style: const TextStyle(color: Colors.white70)),
       subtitle: Text(value, style: TextStyle(color: onTap != null ? Colors.red : Colors.white, fontWeight: onTap != null ? FontWeight.bold : FontWeight.normal)),
       onTap: onTap,
+    );
+  }
+}
+
+class _DevModeRedScreen extends StatefulWidget {
+  const _DevModeRedScreen();
+
+  @override
+  State<_DevModeRedScreen> createState() => _DevModeRedScreenState();
+}
+
+class _DevModeRedScreenState extends State<_DevModeRedScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _showDevModeMessage();
+  }
+
+  void _showDevModeMessage() {
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Developer mode enabled'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.red,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.settings, color: Colors.black, size: 80),
+            const SizedBox(height: 20),
+            const Text('DEVELOPER MODE', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black)),
+          ],
+        ),
+      ),
     );
   }
 }
