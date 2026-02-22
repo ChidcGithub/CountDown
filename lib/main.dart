@@ -138,6 +138,11 @@ class StorageService {
     final p = await prefs;
     await p.setInt(StorageKeys.devModeTitleClicks, count);
   }
+
+  static Future<void> clearAllData() async {
+    final p = await prefs;
+    await p.clear();
+  }
 }
 
 DateTime calculateDeathDate(String username, DateTime birthDate, String deviceId) {
@@ -734,6 +739,9 @@ class _CountdownRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final fontSize = (screenWidth * 0.18).clamp(40.0, 80.0);
+    final labelFontSize = (screenWidth * 0.035).clamp(12.0, 18.0);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -741,27 +749,27 @@ class _CountdownRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           SizedBox(
-            width: 100,
+            width: screenWidth * 0.35,
             child: Text(
               value.toString().padLeft(2, '0'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: GoogleFonts.orbitron().fontFamily,
-                fontSize: 60,
+                fontFamily: GoogleFonts.roboto().fontFamily,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w900,
                 color: isZero ? Colors.grey : Colors.red,
                 height: 1,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: screenWidth * 0.02),
           SizedBox(
-            width: 60,
+            width: screenWidth * 0.12,
             child: Text(
               label,
               style: TextStyle(
-                fontFamily: GoogleFonts.orbitron().fontFamily,
-                fontSize: 14,
+                fontFamily: GoogleFonts.roboto().fontFamily,
+                fontSize: labelFontSize,
                 fontWeight: FontWeight.w500,
                 color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
               ),
@@ -847,6 +855,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_devMode) ...[
             const Divider(color: Colors.red),
             ListTile(title: const Text('Search Users', style: TextStyle(color: Colors.red)), trailing: const Icon(Icons.search, color: Colors.red), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchUsersScreen()))),
+            ListTile(
+              title: const Text('Delete All Data', style: TextStyle(color: Colors.red)),
+              trailing: const Icon(Icons.delete_forever, color: Colors.red),
+              onTap: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: Colors.grey.shade900,
+                    title: const Text('Delete All Data?', style: TextStyle(color: Colors.white)),
+                    content: const Text('This will delete all local data including your countdown and settings. This action cannot be undone.', style: TextStyle(color: Colors.white70)),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel', style: TextStyle(color: Colors.white70))),
+                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  await StorageService.clearAllData();
+                  if (!mounted) return;
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+              },
+            ),
           ],
         ],
       ),
