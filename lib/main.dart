@@ -534,11 +534,11 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
     
     int grayFromIndex = 6;
     if (years <= 0) grayFromIndex = 0;
-    else if (months <= 0 && years <= 0) grayFromIndex = 1;
-    else if (days <= 0 && months <= 0) grayFromIndex = 2;
-    else if (hours <= 0 && days <= 0) grayFromIndex = 3;
-    else if (minutes <= 0 && hours <= 0) grayFromIndex = 4;
-    else if (seconds <= 0 && minutes <= 0) grayFromIndex = 5;
+    if (months <= 0 && years <= 0) grayFromIndex = 1;
+    if (days <= 0 && months <= 0) grayFromIndex = 2;
+    if (hours <= 0 && days <= 0) grayFromIndex = 3;
+    if (minutes <= 0 && hours <= 0) grayFromIndex = 4;
+    if (seconds <= 0 && minutes <= 0) grayFromIndex = 5;
     
     final items = [('YEAR', years, 0), ('MONTH', months, 1), ('DAY', days, 2), ('HOUR', hours, 3), ('MINUTE', minutes, 4), ('SECOND', seconds, 5)];
     
