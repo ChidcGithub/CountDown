@@ -119,8 +119,7 @@ DateTime calculateDeathDate(String username, DateTime birthDate, String deviceId
     hash = ((hash << 5) - hash) + combined.codeUnitAt(i);
     hash = hash & 0xFFFFFFFF;
   }
-  final random = Random(hash);
-  final age = random.nextInt(AppConstants.maxAge - AppConstants.minAge) + AppConstants.minAge;
+  final age = (hash % (AppConstants.maxAge - AppConstants.minAge)) + AppConstants.minAge;
   return birthDate.add(Duration(days: 365 * age));
 }
 
@@ -449,6 +448,31 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    
+    final years = data.years;
+    final months = data.months;
+    final days = data.days;
+    final hours = data.hours;
+    final minutes = data.minutes;
+    final seconds = data.seconds;
+    
+    int grayFromIndex = 6;
+    if (years <= 0) grayFromIndex = 0;
+    else if (months <= 0) grayFromIndex = 1;
+    else if (days <= 0) grayFromIndex = 2;
+    else if (hours <= 0) grayFromIndex = 3;
+    else if (minutes <= 0) grayFromIndex = 4;
+    else if (seconds <= 0) grayFromIndex = 5;
+    
+    final items = [
+      ('YEAR', years, 0),
+      ('MONTH', months, 1),
+      ('DAY', days, 2),
+      ('HOUR', hours, 3),
+      ('MINUTE', minutes, 4),
+      ('SECOND', seconds, 5),
+    ];
+    
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -462,14 +486,7 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
                 const SizedBox(height: 10),
                 Text('BORN: ${data.birthDate.year}-${data.birthDate.month.toString().padLeft(2, '0')}-${data.birthDate.day.toString().padLeft(2, '0')}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                 const Spacer(),
-                ...[
-                  ('YEAR', data.years),
-                  ('MONTH', data.months),
-                  ('DAY', data.days),
-                  ('HOUR', data.hours),
-                  ('MINUTE', data.minutes),
-                  ('SECOND', data.seconds),
-                ].map((item) => _CountdownRow(label: item.$1, value: item.$2, isZero: item.$2 <= 0)),
+                ...items.map((item) => _CountdownRow(label: item.$1, value: item.$2, isZero: item.$3 >= grayFromIndex)),
                 const Spacer(),
               ],
             ),
