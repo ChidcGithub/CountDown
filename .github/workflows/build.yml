@@ -65,6 +65,15 @@ jobs:
           echo "$NEW_VERSION" > version.txt
         shell: bash
 
+      - name: Commit version update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add version.txt
+          git commit -m "Bump version to ${{ steps.version.outputs.new_version }}" || echo "No changes to commit"
+          git push
+
       - name: Delete existing tag if exists
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/github-script@v7
