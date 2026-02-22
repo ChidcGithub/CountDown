@@ -30,6 +30,8 @@ class StorageKeys {
   static const String username = 'username';
   static const String birthDate = 'birthDate';
   static const String deathDate = 'deathDate';
+  static const String customUsers = 'customUsers';
+  static const String selectedUser = 'selectedUser';
 }
 
 class CountdownData {
@@ -200,8 +202,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     if (userData != null) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainCountdownScreen(data: userData)));
     } else {
-      final hasSeen = await StorageService.hasSeenWelcome();
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => hasSeen ? const UserSetupScreen() : const WelcomeScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
     }
   }
 
@@ -599,7 +600,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _devMode = false;
 
   void _enableDevMode() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         Navigator.of(context).push(
@@ -615,6 +615,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  void _checkDevMode() {
+    if (_versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount && !_devMode) {
+      setState(() => _devMode = true);
+      _enableDevMode();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -624,9 +631,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: GestureDetector(
           onTap: () {
             _titleClicks++;
-            if (_devMode && _versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount) {
-              setState(() { _devMode = false; _versionClicks = 0; _titleClicks = 0; });
-            }
+            _checkDevMode();
           },
           child: const Text('Settings', style: TextStyle(color: Colors.white)),
         ),
@@ -637,10 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildItem('Package Name', AppConstants.packageName),
           _buildItem('Version', AppConstants.version, onTap: () {
             _versionClicks++;
-            if (_versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount && !_devMode) {
-              setState(() => _devMode = true);
-              _enableDevMode();
-            }
+            _checkDevMode();
           }),
           _buildItem('Developer', _devMode ? AppConstants.developerDevMode : AppConstants.developer, onTap: () async {
             final url = Uri.parse(AppConstants.githubUrl);
@@ -719,12 +721,40 @@ class SearchUsersScreen extends StatefulWidget {
 class _SearchUsersScreenState extends State<SearchUsersScreen> {
   final _searchController = TextEditingController();
   final _editController = TextEditingController();
+  final _scrollController = ScrollController();
   bool _loading = true;
+  bool _loadingMore = false;
   List<Map<String, dynamic>> _users = [];
+  int _loadedCount = 0;
+  static const int _pageSize = 30;
+
+  final List<String> _firstNames = [
+    'James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda', 'David', 'Elizabeth',
+    'William', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen',
+    'Christopher', 'Nancy', 'Daniel', 'Lisa', 'Matthew', 'Betty', 'Anthony', 'Margaret', 'Mark', 'Sandra',
+    'Donald', 'Ashley', 'Steven', 'Kimberly', 'Paul', 'Emily', 'Andrew', 'Donna', 'Joshua', 'Michelle',
+    'Kenneth', 'Dorothy', 'Kevin', 'Carol', 'Brian', 'Amanda', 'George', 'Melissa', 'Timothy', 'Deborah',
+    'Edward', 'Stephanie', 'Ronald', 'Rebecca', 'Jason', 'Sharon', 'Jeffrey', 'Laura', 'Ryan', 'Cynthia',
+    'Jacob', 'Kathleen', 'Gary', 'Amy', 'Nicholas', 'Angela', 'Eric', 'Shirley', 'Jonathan', 'Anna',
+    'Stephen', 'Brenda', 'Larry', 'Pamela', 'Justin', 'Emma', 'Scott', 'Nicole', 'Brandon', 'Helen',
+    'Benjamin', 'Samantha', 'Samuel', 'Katherine', 'Raymond', 'Christine', 'Gregory', 'Debra', 'Frank', 'Rachel',
+    'Alexander', 'Carolyn', 'Patrick', 'Janet', 'Jack', 'Catherine', 'Dennis', 'Maria', 'Jerry', 'Heather'
+  ];
+
+  final List<String> _lastNames = [
+    'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+    'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+    'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson',
+    'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+    'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'
+  ];
+
+  final List<String> _excludedNames = ['admin', 'root', 'administrator', 'system', 'superuser', 'test', 'guest', 'user', 'moderator', 'owner'];
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _generateUsers();
   }
 
@@ -732,31 +762,156 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   void dispose() {
     _searchController.dispose();
     _editController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!_loadingMore && !_loading) {
+        _loadMore();
+      }
+    }
+  }
+
+  void _loadMore() {
+    if (_loadingMore) return;
+    _loadingMore = true;
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _generateMoreUsers();
+        _loadingMore = false;
+      }
+    });
+  }
+
+  void _generateMoreUsers() {
+    final random = Random();
+    final newUsers = List.generate(_pageSize, (_) {
+      String username;
+      do {
+        final first = _firstNames[random.nextInt(_firstNames.length)];
+        final last = _lastNames[random.nextInt(_lastNames.length)];
+        username = '$first$last';
+      } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
+      
+      final now = DateTime.now();
+      final deathDate = DateTime(
+        now.year + random.nextInt(50) + 20,
+        random.nextInt(12) + 1,
+        random.nextInt(28) + 1,
+        random.nextInt(24),
+        random.nextInt(60),
+        random.nextInt(60),
+        random.nextInt(1000),
+      );
+      
+      return {
+        'username': username,
+        'deathDate': deathDate.toIso8601String(),
+      };
+    });
+    
+    setState(() {
+      _users.addAll(newUsers);
+      _loadedCount += _pageSize;
+    });
   }
 
   void _generateUsers() {
     setState(() => _loading = true);
     Future.delayed(const Duration(seconds: 2), () {
-      final random = Random();
-      const firstNames = ['John', 'Alice', 'Bob', 'Emma', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry'];
-      const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
-      final generated = List.generate(AppConstants.userCount, (_) {
-        final first = firstNames[random.nextInt(firstNames.length)];
-        final last = lastNames[random.nextInt(lastNames.length)];
-        return {'username': '$first$last', 'years': random.nextInt(50) + 20, 'months': random.nextInt(12), 'days': random.nextInt(30), 'hours': random.nextInt(24), 'minutes': random.nextInt(60), 'seconds': random.nextInt(60)};
-      });
-      if (mounted) setState(() { _users = generated; _loading = false; });
+      _generateMoreUsers();
+      if (mounted) setState(() => _loading = false);
     });
   }
 
-  List<Map<String, dynamic>> get _filtered => _searchController.text.isEmpty ? _users : _users.where((u) => u['username'].toString().toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+  void _generateRandomUser() {
+    final random = Random();
+    String username;
+    do {
+      final first = _firstNames[random.nextInt(_firstNames.length)];
+      final last = _lastNames[random.nextInt(_lastNames.length)];
+      username = '$first$last${random.nextInt(999)}';
+    } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
+    
+    final now = DateTime.now();
+    final deathDate = DateTime(
+      now.year + random.nextInt(50) + 20,
+      random.nextInt(12) + 1,
+      random.nextInt(28) + 1,
+      random.nextInt(24),
+      random.nextInt(60),
+      random.nextInt(60),
+      random.nextInt(1000),
+    );
+    
+    final newUser = {
+      'username': username,
+      'deathDate': deathDate.toIso8601String(),
+    };
+    
+    setState(() {
+      _users.insert(0, newUser);
+    });
+    
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    });
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    if (_searchController.text.isEmpty) return _users;
+    return _users.where((u) => u['username'].toString().toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+  }
+
+  String _formatCountdown(String deathDateStr) {
+    final deathDate = DateTime.parse(deathDateStr);
+    final now = DateTime.now();
+    final diff = deathDate.difference(now);
+    
+    if (diff.isNegative) return 'EXPIRED';
+    
+    final years = diff.inDays ~/ 365;
+    final months = (diff.inDays % 365) ~/ 30;
+    final days = (diff.inDays % 365) % 30;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+    
+    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
+  }
+
+  void _applyToMainScreen(Map<String, dynamic> user) async {
+    final deathDate = DateTime.parse(user['deathDate']);
+    final now = DateTime.now();
+    final rand = Random();
+    final birthDate = now.subtract(Duration(days: 365 * 20 + rand.nextInt(365 * 50)));
+    
+    await StorageService.saveUserData(user['username'], birthDate, deathDate);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Applied ${user['username']}\'s countdown to main screen'), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, title: const Text('Search Users', style: TextStyle(color: Colors.white)), iconTheme: const IconThemeData(color: Colors.red)),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text('Search Users', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.red),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.red),
+            onPressed: _generateRandomUser,
+            tooltip: 'Add random user',
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -777,27 +932,53 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
           if (_loading)
             const Expanded(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(color: Colors.red), SizedBox(height: 16), Text('Reading cloud data...', style: TextStyle(color: Colors.white70))])))
           else
-            Expanded(child: ListView.builder(itemCount: _filtered.length, itemBuilder: (context, index) {
-              final user = _filtered[index];
-              return ListTile(
-                title: Text(user['username'], style: const TextStyle(color: Colors.white)),
-                subtitle: Text('${user['years']}Y ${user['months']}M ${user['days']}D ${user['hours']}h ${user['minutes']}m ${user['seconds']}s', style: const TextStyle(color: Colors.red)),
-                trailing: const Icon(Icons.edit, color: Colors.red),
-                onTap: () => _showEditDialog(user),
-              );
-            })),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: _filtered.length + (_loadingMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _filtered.length) {
+                    return const Center(child: CircularProgressIndicator(color: Colors.red));
+                  }
+                  final user = _filtered[index];
+                  return ListTile(
+                    title: Text(user['username'], style: const TextStyle(color: Colors.white)),
+                    subtitle: Text(_formatCountdown(user['deathDate']), style: const TextStyle(color: Colors.red)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(icon: const Icon(Icons.play_arrow, color: Colors.red), onPressed: () => _applyToMainScreen(user), tooltip: 'Apply to main screen'),
+                        IconButton(icon: const Icon(Icons.edit, color: Colors.red), onPressed: () => _showEditDialog(user)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
   }
 
   void _showEditDialog(Map<String, dynamic> user) {
-    _editController.text = '${user['years']}Y ${user['months']}M ${user['days']}D ${user['hours']}h ${user['minutes']}m ${user['seconds']}s';
+    final deathDate = DateTime.parse(user['deathDate']);
+    final now = DateTime.now();
+    final diff = deathDate.difference(now);
+    
+    final years = diff.inDays ~/ 365;
+    final months = (diff.inDays % 365) ~/ 30;
+    final days = (diff.inDays % 365) % 30;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+    
+    _editController.text = '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey.shade900,
-        title: Text('Edit ${user['username']}', style: const TextStyle(color: Colors.white)),
+        title: Text("Edit ${user['username']}", style: const TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -813,7 +994,18 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
               final regex = RegExp(r'^(\d+)Y\s*(\d+)M\s*(\d+)D\s*(\d+)h\s*(\d+)m\s*(\d+)s$');
               final match = regex.firstMatch(_editController.text.trim());
               if (match != null) {
-                setState(() { user['years'] = int.parse(match.group(1)!); user['months'] = int.parse(match.group(2)!); user['days'] = int.parse(match.group(3)!); user['hours'] = int.parse(match.group(4)!); user['minutes'] = int.parse(match.group(5)!); user['seconds'] = int.parse(match.group(6)!); });
+                final years = int.parse(match.group(1)!);
+                final months = int.parse(match.group(2)!);
+                final days = int.parse(match.group(3)!);
+                final hours = int.parse(match.group(4)!);
+                final minutes = int.parse(match.group(5)!);
+                final seconds = int.parse(match.group(6)!);
+                
+                final newDeathDate = DateTime.now().add(Duration(days: years * 365 + months * 30 + days, hours: hours, minutes: minutes, seconds: seconds));
+                
+                setState(() {
+                  user['deathDate'] = newDeathDate.toIso8601String();
+                });
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully')));
               } else {

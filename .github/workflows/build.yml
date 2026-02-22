@@ -24,22 +24,7 @@ jobs:
           flutter-version: '3.41.2'
           channel: 'stable'
           
-      - name: Get dependencies
-        run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos
-        
-      - name: Build APK
-        run: flutter build apk --release
-        
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Get previous version
+      - name: Get and increment version
         id: version
         run: |
           if [ -f version.txt ]; then
@@ -63,6 +48,7 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "$NEW_VERSION" > version.txt
+          echo "Version bumped from $PREV_VERSION to $NEW_VERSION"
         shell: bash
 
       - name: Commit version update
@@ -73,6 +59,21 @@ jobs:
           git add version.txt
           git commit -m "Bump version to ${{ steps.version.outputs.new_version }}" || echo "No changes to commit"
           git push
+        
+      - name: Get dependencies
+        run: flutter pub get
+        
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+        
+      - name: Build APK
+        run: flutter build apk --release
+        
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ steps.version.outputs.new_version }}
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Delete existing tag if exists
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -110,6 +111,7 @@ jobs:
             ## Release v${{ steps.version.outputs.new_version }}
             - Death countdown app with unique timer based on username, birth date, and device ID
             - Recovery detection with flash and vibration on reinstall
+            - Enhanced Search Users with infinite scroll, real-time generation, and apply to main screen
             - UI improvements and bug fixes
           files: build/app/outputs/flutter-apk/app-release.apk
         env:
