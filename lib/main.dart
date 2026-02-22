@@ -6,19 +6,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
+import 'version.dart';
 
 class AppConstants {
   static const String appName = 'Countdown';
   static const String packageName = 'com.death.countdown';
-  static const String version = '0.0.3';
+  static const String version = appVersion;
   static const String developer = 'ChidcGithub';
   static const String developerDevMode = 'Death God';
   static const String githubUrl = 'https://github.com/ChidcGithub/CountDown';
   
   static const int minAge = 60;
   static const int maxAge = 100;
-  static const int userCount = 50;
-  static const int tapCountToShowSettings = 5;
   static const int versionTapCount = 3;
   static const int titleTapCount = 5;
 }
@@ -30,8 +29,6 @@ class StorageKeys {
   static const String username = 'username';
   static const String birthDate = 'birthDate';
   static const String deathDate = 'deathDate';
-  static const String customUsers = 'customUsers';
-  static const String selectedUser = 'selectedUser';
   static const String devModeVersionClicks = 'devModeVersionClicks';
   static const String devModeTitleClicks = 'devModeTitleClicks';
 }
@@ -168,10 +165,7 @@ class CountdownApp extends StatelessWidget {
         brightness: Brightness.dark,
         primaryColor: Colors.black,
         scaffoldBackgroundColor: Colors.black,
-        colorScheme: const ColorScheme.dark(
-          primary: Colors.red,
-          secondary: Colors.red,
-        ),
+        colorScheme: const ColorScheme.dark(primary: Colors.red, secondary: Colors.red),
       ),
       home: const InitialLoader(),
     );
@@ -207,9 +201,7 @@ class _InitialLoaderState extends State<InitialLoader> {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: CircularProgressIndicator(color: Colors.red),
-      ),
+      body: Center(child: CircularProgressIndicator(color: Colors.red)),
     );
   }
 }
@@ -344,29 +336,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 'IMPORTANT NOTICE\n\n'
                                 'Please read this User Agreement carefully before using this application.\n\n'
                                 '1. ENTERTAINMENT PURPOSE ONLY\n'
-                                'This application is designed solely for entertainment purposes. The countdown timer displayed is a fictional simulation and should not be interpreted as any form of prediction, prophecy, or factual information about an individual\'s lifespan. The developer makes no claims regarding the accuracy of any displayed information.\n\n'
+                                'This application is designed solely for entertainment purposes. The countdown timer displayed is a fictional simulation and should not be interpreted as any form of prediction, prophecy, or factual information about an individual\'s lifespan.\n\n'
                                 '2. NO REAL DATA USED\n'
-                                'The countdown calculation is based on a deterministic algorithm that combines username, birth date, and device identification. This algorithm is not based on any medical, scientific, or statistical data. The result is randomly generated and has no connection to reality.\n\n'
+                                'The countdown calculation is based on a deterministic algorithm that combines username, birth date, and device identification.\n\n'
                                 '3. NO LIABILITY\n'
-                                'The developer shall not be held liable for any psychological, emotional, or behavioral changes that may occur as a result of using this application. If you find the content disturbing, please discontinue use immediately.\n\n'
+                                'The developer shall not be held liable for any psychological, emotional, or behavioral changes that may occur as a result of using this application.\n\n'
                                 '4. FORCE MAJEURE CLAUSE\n'
-                                'If you make life decisions based on this application\'s countdown and experience unexpected consequences, such events shall be considered force majeure. The developer assumes no responsibility for any such occurrences.\n\n'
+                                'If you make life decisions based on this application\'s countdown and experience unexpected consequences, such events shall be considered force majeure.\n\n'
                                 '5. DATA PRIVACY\n'
-                                'This application does not collect, store, or transmit any personal information to external servers. All data remains local on your device. The application may generate a unique device identifier for local storage purposes only.\n\n'
+                                'This application does not collect, store, or transmit any personal information to external servers.\n\n'
                                 '6. NO NETWORK COMMUNICATION\n'
-                                'This application does not connect to the internet for any purpose, including but not limited to: data synchronization, analytics, advertising, or crash reporting.\n\n'
+                                'This application does not connect to the internet for any purpose.\n\n'
                                 '7. USER RESPONSIBILITY\n'
-                                'You acknowledge that you are of legal age to use this application or have obtained parental/guardian consent. You accept full responsibility for your use of this application.\n\n'
+                                'You acknowledge that you are of legal age to use this application or have obtained parental/guardian consent.\n\n'
                                 '8. MODIFICATION OF TERMS\n'
-                                'The developer reserves the right to modify this agreement at any time without prior notice. Continued use of the application constitutes acceptance of any modified terms.\n\n'
+                                'The developer reserves the right to modify this agreement at any time.\n\n'
                                 '9. INTELLECTUAL PROPERTY\n'
-                                'All content within this application, including but not limited to code, design, and documentation, is the intellectual property of the developer.\n\n'
+                                'All content within this application is the intellectual property of the developer.\n\n'
                                 '10. GOVERNING LAW\n'
-                                'This agreement shall be governed by and construed in accordance with applicable laws.\n\n'
+                                'This agreement shall be governed by applicable laws.\n\n'
                                 '11. ADDITIONAL INFORMATION\n'
-                                'For more information, updates, and detailed documentation about this application, please visit our GitHub repository:\n'
+                                'For more information, please visit our GitHub repository:\n'
                                 'https://github.com/ChidcGithub/CountDown\n\n'
-                                'By checking the box below, you acknowledge that you have read, understood, and agree to be bound by all terms and conditions outlined in this agreement.',
+                                'By checking the box below, you acknowledge that you have read, understood, and agree to be bound by all terms and conditions.',
                                 style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
                               ),
                             ],
@@ -395,8 +387,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     if (!mounted) return;
                     navigator.pushReplacement(MaterialPageRoute(builder: (_) => const UserSetupScreen()));
                   } : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800, foregroundColor: Colors.white, disabledForegroundColor: Colors.grey),
-                  child: Text('CONTINUE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: agreed ? Colors.white : Colors.grey)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800),
+                  child: const Text('CONTINUE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -493,8 +485,8 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     if (!mounted) return;
                     navigator.pushReplacement(MaterialPageRoute(builder: (_) => MainCountdownScreen(data: CountdownData(username: _nameController.text, birthDate: _selectedDate!, deathDate: deathDate))));
                   } : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800, foregroundColor: Colors.white, disabledForegroundColor: Colors.grey),
-                  child: Text('START', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isValid ? Colors.white : Colors.grey)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, disabledBackgroundColor: Colors.grey.shade800),
+                  child: const Text('START', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -517,20 +509,7 @@ class MainCountdownScreen extends StatefulWidget {
 class _MainCountdownScreenState extends State<MainCountdownScreen> {
   int _clickCount = 0;
   DateTime? _lastClickTime;
-  Timer? _timer;
   bool _showSettings = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   void _handleTap() {
     final now = DateTime.now();
@@ -540,13 +519,12 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
       _clickCount = 1;
     }
     _lastClickTime = now;
-    if (_clickCount >= AppConstants.tapCountToShowSettings) setState(() => _showSettings = true);
+    if (_clickCount >= 5) setState(() => _showSettings = true);
   }
 
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
-    
     final years = data.years;
     final months = data.months;
     final days = data.days;
@@ -555,28 +533,14 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
     final seconds = data.seconds;
     
     int grayFromIndex = 6;
-    if (years <= 0) {
-      grayFromIndex = 0;
-    } else if (months <= 0) {
-      grayFromIndex = 1;
-    } else if (days <= 0) {
-      grayFromIndex = 2;
-    } else if (hours <= 0) {
-      grayFromIndex = 3;
-    } else if (minutes <= 0) {
-      grayFromIndex = 4;
-    } else if (seconds <= 0) {
-      grayFromIndex = 5;
-    }
+    if (years <= 0) grayFromIndex = 0;
+    else if (months <= 0) grayFromIndex = 1;
+    else if (days <= 0) grayFromIndex = 2;
+    else if (hours <= 0) grayFromIndex = 3;
+    else if (minutes <= 0) grayFromIndex = 4;
+    else if (seconds <= 0) grayFromIndex = 5;
     
-    final items = [
-      ('YEAR', years, 0),
-      ('MONTH', months, 1),
-      ('DAY', days, 2),
-      ('HOUR', hours, 3),
-      ('MINUTE', minutes, 4),
-      ('SECOND', seconds, 5),
-    ];
+    final items = [('YEAR', years, 0), ('MONTH', months, 1), ('DAY', days, 2), ('HOUR', hours, 3), ('MINUTE', minutes, 4), ('SECOND', seconds, 5)];
     
     return Scaffold(
       backgroundColor: Colors.black,
@@ -684,15 +648,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _enableDevMode() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
-        Navigator.of(context).push(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const _DevModeRedScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
+        Navigator.of(context).push(PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const _DevModeRedScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ));
       }
     });
   }
@@ -770,12 +730,7 @@ class _DevModeRedScreenState extends State<_DevModeRedScreen> {
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Developer mode enabled'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Developer mode enabled'), backgroundColor: Colors.red));
       }
     });
   }
@@ -814,6 +769,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   List<Map<String, dynamic>> _filteredUsers = [];
   String _currentUsername = '';
   int? _currentUserIndex;
+  Timer? _refreshTimer;
   static const int _pageSize = 30;
 
   final List<String> _firstNames = [
@@ -839,8 +795,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   final List<String> _excludedNames = ['admin', 'root', 'administrator', 'system', 'superuser', 'test', 'guest', 'user', 'moderator', 'owner'];
 
-  Timer? _refreshTimer;
-
   @override
   void initState() {
     super.initState();
@@ -848,18 +802,14 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     _loadCurrentUser();
     _generateUsers();
     _refreshTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      if (mounted) {
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     });
   }
 
   Future<void> _loadCurrentUser() async {
     final userData = await StorageService.loadUserData();
     if (userData != null && mounted) {
-      setState(() {
-        _currentUsername = userData.username;
-      });
+      setState(() => _currentUsername = userData.username);
     }
   }
 
@@ -878,9 +828,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         _isLoadingMoreScheduled = true;
         Future.delayed(const Duration(milliseconds: 500), () {
           _isLoadingMoreScheduled = false;
-          if (!_loadingMore && !_loading && mounted) {
-            _loadMore();
-          }
+          if (!_loadingMore && !_loading && mounted) _loadMore();
         });
       }
     }
@@ -910,21 +858,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
       
       final now = DateTime.now();
-      final deathDate = DateTime(
-        now.year + random.nextInt(50) + 20,
-        random.nextInt(12) + 1,
-        random.nextInt(28) + 1,
-        random.nextInt(24),
-        random.nextInt(60),
-        random.nextInt(60),
-        random.nextInt(1000),
-      );
+      final deathDate = DateTime(now.year + random.nextInt(50) + 20, random.nextInt(12) + 1, random.nextInt(28) + 1, random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000));
       
-      return {
-        'username': username,
-        'deathDate': deathDate.toIso8601String(),
-        'cachedCountdown': _calculateCountdownString(deathDate),
-      };
+      return {'username': username, 'deathDate': deathDate.toIso8601String()};
     });
     
     _users.addAll(newUsers);
@@ -950,19 +886,11 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   void _scrollToCurrentUser() {
     if (_currentUserIndex != null && _currentUserIndex! < _filteredUsers.length) {
-      _scrollController.animateTo(
-        _currentUserIndex! * 72.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _scrollController.animateTo(_currentUserIndex! * 72.0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
       final idx = _users.indexWhere((u) => u['username'] == _currentUsername);
       if (idx != -1) {
-        _scrollController.animateTo(
-          idx * 72.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+        _scrollController.animateTo(idx * 72.0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       }
     }
   }
@@ -978,7 +906,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   String _calculateCountdownString(DateTime deathDate) {
     final now = DateTime.now();
     final diff = deathDate.difference(now);
-    
     if (diff.isNegative) return 'EXPIRED';
     
     final years = diff.inDays ~/ 365;
@@ -1002,22 +929,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
     
     final now = DateTime.now();
-    final deathDate = DateTime(
-      now.year + random.nextInt(50) + 20,
-      random.nextInt(12) + 1,
-      random.nextInt(28) + 1,
-      random.nextInt(24),
-      random.nextInt(60),
-      random.nextInt(60),
-      random.nextInt(1000),
-    );
+    final deathDate = DateTime(now.year + random.nextInt(50) + 20, random.nextInt(12) + 1, random.nextInt(28) + 1, random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000));
     
-    final newUser = {
-      'username': username,
-      'deathDate': deathDate.toIso8601String(),
-      'cachedCountdown': _calculateCountdownString(deathDate),
-    };
-    
+    final newUser = {'username': username, 'deathDate': deathDate.toIso8601String()};
     _users.insert(0, newUser);
     _updateFilteredUsers();
     
@@ -1062,20 +976,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.black,
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Sync Complete', style: TextStyle(color: Colors.white)),
-          ],
-        ),
+        title: const Row(children: [Icon(Icons.check_circle, color: Colors.green), SizedBox(width: 8), Text('Sync Complete', style: TextStyle(color: Colors.white))]),
         content: Text("${user['username']}'s countdown has been synced to your device", style: const TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: Colors.red)))],
       ),
     );
   }
@@ -1089,11 +992,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         title: const Text('Search Users', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.red),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.red),
-            onPressed: _generateRandomUser,
-            tooltip: 'Add random user',
-          ),
+          IconButton(icon: const Icon(Icons.add, color: Colors.red), onPressed: _generateRandomUser, tooltip: 'Add random user'),
         ],
       ),
       body: Column(
@@ -1118,11 +1017,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 ),
                 if (_searchController.text.isNotEmpty && _currentUserIndex != null) ...[
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.my_location, color: Colors.red),
-                    onPressed: _scrollToCurrentUser,
-                    tooltip: 'Locate your username',
-                  ),
+                  IconButton(icon: const Icon(Icons.my_location, color: Colors.red), onPressed: _scrollToCurrentUser, tooltip: 'Locate your username'),
                 ],
               ],
             ),
@@ -1135,11 +1030,10 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 controller: _scrollController,
                 itemCount: _filteredUsers.length + (_loadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index == _filteredUsers.length) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.red));
-                  }
+                  if (index == _filteredUsers.length) return const Center(child: CircularProgressIndicator(color: Colors.red));
                   final user = _filteredUsers[index];
                   final isCurrentUser = user['username'] == _currentUsername;
+                  final deathDate = DateTime.parse(user['deathDate']);
                   return ListTile(
                     tileColor: isCurrentUser ? Colors.red.withValues(alpha: 0.2) : null,
                     title: Row(
@@ -1155,7 +1049,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                         ],
                       ],
                     ),
-                    subtitle: Text(user['cachedCountdown'] ?? '...', style: const TextStyle(color: Colors.red)),
+                    subtitle: Text(_calculateCountdownString(deathDate), style: const TextStyle(color: Colors.red)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1212,13 +1106,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 final hours = int.parse(match.group(4)!);
                 final minutes = int.parse(match.group(5)!);
                 final seconds = int.parse(match.group(6)!);
-                
                 final newDeathDate = DateTime.now().add(Duration(days: years * 365 + months * 30 + days, hours: hours, minutes: minutes, seconds: seconds));
-                
-                setState(() {
-                  user['deathDate'] = newDeathDate.toIso8601String();
-                  user['cachedCountdown'] = _calculateCountdownString(newDeathDate);
-                });
+                setState(() => user['deathDate'] = newDeathDate.toIso8601String());
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully')));
               } else {

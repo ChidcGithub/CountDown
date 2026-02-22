@@ -62,6 +62,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "$NEW_VERSION" > version.txt
           echo "Version bumped from $PREV_VERSION to $NEW_VERSION"
+          echo "const String appVersion = '$NEW_VERSION';" > lib/version.dart
         shell: bash
 
       - name: Commit version update
