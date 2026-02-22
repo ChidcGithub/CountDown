@@ -745,7 +745,7 @@ class _CountdownRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final fontSize = (screenWidth * 0.18).clamp(40.0, 80.0);
+    final fontSize = (screenWidth * 0.22).clamp(50.0, 100.0);
     final labelFontSize = (screenWidth * 0.035).clamp(12.0, 18.0);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
