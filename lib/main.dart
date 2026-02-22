@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 class AppConstants {
   static const String appName = 'Countdown';
   static const String packageName = 'com.death.countdown';
-  static const String version = '1.0.0';
+  static const String version = '0.0.3';
   static const String developer = 'ChidcGithub';
   static const String developerDevMode = 'Death God';
   static const String githubUrl = 'https://github.com/ChidcGithub/CountDown';
@@ -32,6 +32,8 @@ class StorageKeys {
   static const String deathDate = 'deathDate';
   static const String customUsers = 'customUsers';
   static const String selectedUser = 'selectedUser';
+  static const String devModeVersionClicks = 'devModeVersionClicks';
+  static const String devModeTitleClicks = 'devModeTitleClicks';
 }
 
 class CountdownData {
@@ -112,6 +114,26 @@ class StorageService {
     await p.setString(StorageKeys.username, username);
     await p.setString(StorageKeys.birthDate, birthDate.toIso8601String());
     await p.setString(StorageKeys.deathDate, deathDate.toIso8601String());
+  }
+
+  static Future<int> getDevModeVersionClicks() async {
+    final p = await prefs;
+    return p.getInt(StorageKeys.devModeVersionClicks) ?? 0;
+  }
+
+  static Future<int> getDevModeTitleClicks() async {
+    final p = await prefs;
+    return p.getInt(StorageKeys.devModeTitleClicks) ?? 0;
+  }
+
+  static Future<void> setDevModeVersionClicks(int count) async {
+    final p = await prefs;
+    await p.setInt(StorageKeys.devModeVersionClicks, count);
+  }
+
+  static Future<void> setDevModeTitleClicks(int count) async {
+    final p = await prefs;
+    await p.setInt(StorageKeys.devModeTitleClicks, count);
   }
 }
 
@@ -608,6 +630,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _titleClicks = 0;
   bool _devMode = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadClickCounts();
+  }
+
+  Future<void> _loadClickCounts() async {
+    _versionClicks = await StorageService.getDevModeVersionClicks();
+    _titleClicks = await StorageService.getDevModeTitleClicks();
+  }
+
   void _enableDevMode() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
@@ -627,6 +660,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _checkDevMode() {
     if (_versionClicks >= AppConstants.versionTapCount && _titleClicks >= AppConstants.titleTapCount && !_devMode) {
       setState(() => _devMode = true);
+      StorageService.setDevModeVersionClicks(0);
+      StorageService.setDevModeTitleClicks(0);
       _enableDevMode();
     }
   }
@@ -638,8 +673,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: GestureDetector(
-          onTap: () {
+          onTap: () async {
             _titleClicks++;
+            await StorageService.setDevModeTitleClicks(_titleClicks);
             _checkDevMode();
           },
           child: const Text('Settings', style: TextStyle(color: Colors.white)),
@@ -649,8 +685,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           _buildItem('Package Name', AppConstants.packageName),
-          _buildItem('Version', AppConstants.version, onTap: () {
+          _buildItem('Version', AppConstants.version, onTap: () async {
             _versionClicks++;
+            await StorageService.setDevModeVersionClicks(_versionClicks);
             _checkDevMode();
           }),
           _buildItem('Developer', _devMode ? AppConstants.developerDevMode : AppConstants.developer, onTap: () async {
@@ -734,6 +771,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   final List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _filteredUsers = [];
   static const int _pageSize = 30;
 
   final List<String> _firstNames = [
@@ -776,11 +814,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      if (!_loadingMore && !_loading) {
-        _loadMore();
+      if (!_loadingMore && !_loading && !_isLoadingMoreScheduled) {
+        _isLoadingMoreScheduled = true;
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _isLoadingMoreScheduled = false;
+          if (!_loadingMore && !_loading && mounted) {
+            _loadMore();
+          }
+        });
       }
     }
   }
+
+  bool _isLoadingMoreScheduled = false;
 
   void _loadMore() {
     if (_loadingMore) return;
@@ -817,12 +863,21 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       return {
         'username': username,
         'deathDate': deathDate.toIso8601String(),
+        'cachedCountdown': _calculateCountdownString(deathDate),
       };
     });
     
-    setState(() {
-      _users.addAll(newUsers);
-    });
+    _users.addAll(newUsers);
+    _updateFilteredUsers();
+  }
+
+  void _updateFilteredUsers() {
+    if (_searchController.text.isEmpty) {
+      _filteredUsers = List.from(_users);
+    } else {
+      final query = _searchController.text.toLowerCase();
+      _filteredUsers = _users.where((u) => u['username'].toString().toLowerCase().contains(query)).toList();
+    }
   }
 
   void _generateUsers() {
@@ -831,6 +886,22 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       _generateMoreUsers();
       if (mounted) setState(() => _loading = false);
     });
+  }
+
+  String _calculateCountdownString(DateTime deathDate) {
+    final now = DateTime.now();
+    final diff = deathDate.difference(now);
+    
+    if (diff.isNegative) return 'EXPIRED';
+    
+    final years = diff.inDays ~/ 365;
+    final months = (diff.inDays % 365) ~/ 30;
+    final days = (diff.inDays % 365) % 30;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+    
+    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
   }
 
   void _generateRandomUser() {
@@ -856,37 +927,15 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     final newUser = {
       'username': username,
       'deathDate': deathDate.toIso8601String(),
+      'cachedCountdown': _calculateCountdownString(deathDate),
     };
     
-    setState(() {
-      _users.insert(0, newUser);
-    });
+    _users.insert(0, newUser);
+    _updateFilteredUsers();
     
     Future.delayed(const Duration(milliseconds: 100), () {
       _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     });
-  }
-
-  List<Map<String, dynamic>> get _filtered {
-    if (_searchController.text.isEmpty) return _users;
-    return _users.where((u) => u['username'].toString().toLowerCase().contains(_searchController.text.toLowerCase())).toList();
-  }
-
-  String _formatCountdown(String deathDateStr) {
-    final deathDate = DateTime.parse(deathDateStr);
-    final now = DateTime.now();
-    final diff = deathDate.difference(now);
-    
-    if (diff.isNegative) return 'EXPIRED';
-    
-    final years = diff.inDays ~/ 365;
-    final months = (diff.inDays % 365) ~/ 30;
-    final days = (diff.inDays % 365) % 30;
-    final hours = diff.inHours % 24;
-    final minutes = diff.inMinutes % 60;
-    final seconds = diff.inSeconds % 60;
-    
-    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
   }
 
   void _syncToServer(Map<String, dynamic> user) async {
@@ -982,15 +1031,15 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                itemCount: _filtered.length + (_loadingMore ? 1 : 0),
+                itemCount: _filteredUsers.length + (_loadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index == _filtered.length) {
+                  if (index == _filteredUsers.length) {
                     return const Center(child: CircularProgressIndicator(color: Colors.red));
                   }
-                  final user = _filtered[index];
+                  final user = _filteredUsers[index];
                   return ListTile(
                     title: Text(user['username'], style: const TextStyle(color: Colors.white)),
-                    subtitle: Text(_formatCountdown(user['deathDate']), style: const TextStyle(color: Colors.red)),
+                    subtitle: Text(user['cachedCountdown'] ?? '...', style: const TextStyle(color: Colors.red)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1052,6 +1101,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 
                 setState(() {
                   user['deathDate'] = newDeathDate.toIso8601String();
+                  user['cachedCountdown'] = _calculateCountdownString(newDeathDate);
                 });
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully')));
