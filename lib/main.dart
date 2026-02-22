@@ -620,34 +620,34 @@ class _CountdownRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 200,
-            child: Text(
-              value.toString().padLeft(3, '0'),
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontFamily: GoogleFonts.roboto().fontFamily,
-                fontSize: 100,
-                fontWeight: FontWeight.w900,
-                color: isZero ? Colors.grey : Colors.red,
-                height: 1,
-                letterSpacing: -4,
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value.toString().padLeft(3, '0'),
+                style: TextStyle(
+                  fontFamily: GoogleFonts.orbitron().fontFamily,
+                  fontSize: 80,
+                  fontWeight: FontWeight.w900,
+                  color: isZero ? Colors.grey : Colors.red,
+                  height: 1,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           SizedBox(
-            width: 80,
+            width: 70,
             child: Text(
               label,
-              textAlign: TextAlign.left,
               style: TextStyle(
-                fontFamily: GoogleFonts.roboto().fontFamily,
-                fontSize: 18,
+                fontFamily: GoogleFonts.orbitron().fontFamily,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
               ),
