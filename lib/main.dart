@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -547,32 +548,39 @@ class _CountdownRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final numberWidth = screenWidth * 0.55;
-    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
         children: [
           SizedBox(
-            width: numberWidth,
+            width: 180,
             child: Text(
               value.toString().padLeft(3, '0'),
+              textAlign: TextAlign.right,
               style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 72,
+                fontFamily: GoogleFonts.roboto().fontFamily,
+                fontSize: 80,
                 fontWeight: FontWeight.w900,
                 color: isZero ? Colors.grey : Colors.red,
                 height: 1,
-                letterSpacing: 4,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          Text(label, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: isZero ? Colors.grey.shade600 : Colors.red.shade300)),
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              textAlign: TextAlign.left,
+              style: TextStyle(
+                fontFamily: GoogleFonts.roboto().fontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
+              ),
+            ),
+          ),
         ],
       ),
     );
