@@ -514,6 +514,9 @@ class _CountdownRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final numberWidth = screenWidth * 0.55;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
@@ -522,10 +525,20 @@ class _CountdownRow extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         children: [
           SizedBox(
-            width: 220,
-            child: Text(value.toString().padLeft(3, '0'), textAlign: TextAlign.center, style: TextStyle(fontSize: 84, fontWeight: FontWeight.w900, color: isZero ? Colors.grey : Colors.red, height: 1)),
+            width: numberWidth,
+            child: Text(
+              value.toString().padLeft(3, '0'),
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 72,
+                fontWeight: FontWeight.w900,
+                color: isZero ? Colors.grey : Colors.red,
+                height: 1,
+                letterSpacing: 4,
+              ),
+            ),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
           Text(label, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: isZero ? Colors.grey.shade600 : Colors.red.shade300)),
         ],
       ),
