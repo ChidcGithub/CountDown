@@ -44,7 +44,10 @@ class CountdownData {
     required this.deathDate,
   });
 
-  Duration get _diff => deathDate.difference(DateTime.now());
+  Duration get _diff {
+    final diff = deathDate.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
+  }
 
   int get years => _diff.inDays ~/ 365;
   int get months => (_diff.inDays % 365) ~/ 30;
@@ -587,31 +590,30 @@ class _CountdownRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                value.toString().padLeft(3, '0'),
-                style: TextStyle(
-                  fontFamily: GoogleFonts.orbitron().fontFamily,
-                  fontSize: 80,
-                  fontWeight: FontWeight.w900,
-                  color: isZero ? Colors.grey : Colors.red,
-                  height: 1,
-                ),
+          SizedBox(
+            width: 100,
+            child: Text(
+              value.toString().padLeft(2, '0'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: GoogleFonts.orbitron().fontFamily,
+                fontSize: 60,
+                fontWeight: FontWeight.w900,
+                color: isZero ? Colors.grey : Colors.red,
+                height: 1,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           SizedBox(
-            width: 70,
+            width: 60,
             child: Text(
               label,
               style: TextStyle(
                 fontFamily: GoogleFonts.orbitron().fontFamily,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
               ),
