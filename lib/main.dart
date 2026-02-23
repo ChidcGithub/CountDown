@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,49 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'version.dart';
+
+class CryptoUtil {
+  static String _safeReplace(String s, String from, String to) {
+    return s.split(from).join(to);
+  }
+
+  static String encode(String input, String key) {
+    final combined = '$input:$key';
+    final bytes = utf8.encode(combined);
+    final encoded = base64Encode(bytes);
+    var result = encoded;
+    result = _safeReplace(result, '+', '-');
+    result = _safeReplace(result, '/', '_');
+    result = _safeReplace(result, '=', '');
+    return result;
+  }
+
+  static String? decode(String input, String key) {
+    try {
+      var normalized = input.replaceAll('-', '+');
+      normalized = normalized.replaceAll('_', '/');
+      while (normalized.length % 4 != 0) {
+        normalized += '=';
+      }
+      final bytes = base64Decode(normalized);
+      final combined = utf8.decode(bytes);
+      final parts = combined.split(':');
+      if (parts.length >= 2 && parts.last == key) {
+        return parts.sublist(0, parts.length - 1).join(':');
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static String hash(String input) {
+    var hash = 0;
+    for (var i = 0; i < input.length; i++) {
+      hash = ((hash << 5) - hash) + input.codeUnitAt(i);
+      hash = hash & 0xFFFFFFFF;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
+  }
+}
 
 class AppConstants {
   static const String appName = 'Countdown';
@@ -30,6 +74,8 @@ class StorageKeys {
   static const String deathDate = 'deathDate';
   static const String devModeVersionClicks = 'devModeVersionClicks';
   static const String devModeTitleClicks = 'devModeTitleClicks';
+  static const String encryptedData = 'encryptedData';
+  static const String isFirstLaunch = 'isFirstLaunch';
 }
 
 class CountdownData {
@@ -142,9 +188,47 @@ class StorageService {
 
   static Future<void> saveUserData(String username, DateTime birthDate, DateTime deathDate) async {
     final p = await prefs;
+    final deviceId = (await getDeviceId()) ?? '';
+    final key = CryptoUtil.hash(deviceId);
+    
+    final dataJson = '$username|${birthDate.toIso8601String()}|${deathDate.toIso8601String()}';
+    final encrypted = CryptoUtil.encode(dataJson, key);
+    
+    await p.setString(StorageKeys.encryptedData, encrypted);
     await p.setString(StorageKeys.username, username);
     await p.setString(StorageKeys.birthDate, birthDate.toIso8601String());
     await p.setString(StorageKeys.deathDate, deathDate.toIso8601String());
+  }
+
+  static Future<CountdownData?> loadEncryptedUserData() async {
+    final p = await prefs;
+    final deviceId = (await getDeviceId()) ?? '';
+    final key = CryptoUtil.hash(deviceId);
+    
+    final encrypted = p.getString(StorageKeys.encryptedData);
+    if (encrypted == null) return null;
+    
+    final decrypted = CryptoUtil.decode(encrypted, key);
+    if (decrypted == null) return null;
+    
+    final parts = decrypted.split('|');
+    if (parts.length != 3) return null;
+    
+    return CountdownData(
+      username: parts[0],
+      birthDate: DateTime.parse(parts[1]),
+      deathDate: DateTime.parse(parts[2]),
+    );
+  }
+
+  static Future<bool> isFirstLaunch() async {
+    final p = await prefs;
+    final isFirst = p.getBool(StorageKeys.isFirstLaunch);
+    if (isFirst == null) {
+      await p.setBool(StorageKeys.isFirstLaunch, false);
+      return true;
+    }
+    return false;
   }
 
   static Future<int> getDevModeVersionClicks() async {
@@ -234,18 +318,25 @@ class _InitialLoaderState extends State<InitialLoader> {
   }
 
   Future<void> _checkAndNavigate() async {
-    final userData = await StorageService.loadUserData();
+    final isFirst = await StorageService.isFirstLaunch();
+    final encryptedData = await StorageService.loadEncryptedUserData();
     if (!mounted) return;
 
-    if (userData != null) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SplashScreen()));
+    if (isFirst && encryptedData != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainCountdownScreen(data: encryptedData)),
+      );
+    } else if (encryptedData != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainCountdownScreen(data: encryptedData)),
+      );
     } else {
-      final hasSeenWelcome = await StorageService.hasSeenWelcome();
-      if (hasSeenWelcome) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserSetupScreen()));
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
     }
   }
 
