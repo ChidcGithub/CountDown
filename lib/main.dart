@@ -970,6 +970,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   String _currentUsername = '';
   int? _currentUserIndex;
   Timer? _refreshTimer;
+  Map<String, dynamic>? _currentUserData;
   static const int _pageSize = 30;
 
   final List<String> _firstNames = [
@@ -1021,7 +1022,13 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   Future<void> _loadCurrentUser() async {
     final userData = await StorageService.loadUserData();
     if (userData != null && mounted) {
-      setState(() => _currentUsername = userData.username);
+      setState(() {
+        _currentUsername = userData.username;
+        _currentUserData = {
+          'username': userData.username,
+          'deathDate': userData.deathDate.toIso8601String(),
+        };
+      });
     }
   }
 
@@ -1091,6 +1098,12 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         if (_filteredUsers[i]['username'] == _currentUsername) {
           _currentUserIndex = i;
           break;
+        }
+      }
+      if (_currentUserIndex == null && _currentUserData != null) {
+        if (_currentUsername.toLowerCase().contains(query)) {
+          _filteredUsers.insert(0, _currentUserData!);
+          _currentUserIndex = 0;
         }
       }
     }
