@@ -57,6 +57,36 @@ class CountdownData {
   int get milliseconds => _diff.inMilliseconds % 1000;
 }
 
+class SearchUser {
+  final String username;
+  DateTime deathDate;
+
+  SearchUser({required this.username, required this.deathDate});
+
+  String get countdownString {
+    final now = DateTime.now();
+    final diff = deathDate.difference(now);
+    if (diff.isNegative) return 'EXPIRED';
+    
+    final years = diff.inDays ~/ 365;
+    final months = (diff.inDays % 365) ~/ 30;
+    final days = (diff.inDays % 365) % 30;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+    final milliseconds = diff.inMilliseconds % 1000;
+    
+    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms';
+  }
+
+  Map<String, dynamic> toMap() => {'username': username, 'deathDate': deathDate.toIso8601String()};
+
+  static SearchUser fromMap(Map<String, dynamic> map) => SearchUser(
+    username: map['username'],
+    deathDate: DateTime.parse(map['deathDate']),
+  );
+}
+
 class StorageService {
   static SharedPreferences? _prefs;
 
@@ -960,19 +990,9 @@ class SearchUsersScreen extends StatefulWidget {
 }
 
 class _SearchUsersScreenState extends State<SearchUsersScreen> {
-  final _searchController = TextEditingController();
-  final _editController = TextEditingController();
-  final _scrollController = ScrollController();
-  bool _loading = true;
-  bool _loadingMore = false;
-  final List<Map<String, dynamic>> _users = [];
-  List<Map<String, dynamic>> _filteredUsers = [];
-  String _currentUsername = '';
-  int? _currentUserIndex;
-  Timer? _refreshTimer;
-  Map<String, dynamic>? _currentUserData;
+  // ==================== 静态数据 ====================
   static const int _pageSize = 30;
-
+  
   final List<String> _firstNames = [
     'James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda', 'David', 'Elizabeth',
     'William', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen',
@@ -1006,103 +1026,182 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'
   ];
 
-  final List<String> _excludedNames = ['admin', 'root', 'administrator', 'system', 'superuser', 'test', 'guest', 'user', 'moderator', 'owner'];
+  final Set<String> _excludedNames = {'admin', 'root', 'administrator', 'system', 'superuser', 'test', 'guest', 'user', 'moderator', 'owner'};
 
+  // ==================== 控制器 ====================
+  final _searchController = TextEditingController();
+  final _editController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  // ==================== 状态变量 ====================
+  bool _loading = true;
+  bool _loadingMore = false;
+  bool _isLoadingMoreScheduled = false;
+  
+  // 用户列表
+  final List<SearchUser> _users = [];
+  List<SearchUser> _filteredUsers = [];
+  
+  // 当前用户信息
+  String _currentUsername = '';
+  SearchUser? _currentUser;
+  int? _currentUserIndex;
+
+  // ==================== 生命周期 ====================
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadCurrentUser();
-    _generateUsers();
-    _refreshTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  Future<void> _loadCurrentUser() async {
-    final userData = await StorageService.loadUserData();
-    if (userData != null && mounted) {
-      setState(() {
-        _currentUsername = userData.username;
-        _currentUserData = {
-          'username': userData.username,
-          'deathDate': userData.deathDate.toIso8601String(),
-        };
-      });
-    }
+    _generateInitialUsers();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
     _searchController.dispose();
     _editController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  // ==================== 数据加载 ====================
+  Future<void> _loadCurrentUser() async {
+    final userData = await StorageService.loadUserData();
+    if (userData != null && mounted) {
+      setState(() {
+        _currentUsername = userData.username;
+        _currentUser = SearchUser(
+          username: userData.username,
+          deathDate: userData.deathDate,
+        );
+      });
+    }
+  }
+
+  void _generateInitialUsers() {
+    setState(() => _loading = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      _generateMoreUsers();
+      if (mounted) setState(() => _loading = false);
+    });
+  }
+
+  // ==================== 用户生成 ====================
+  SearchUser _generateRandomUser() {
+    final random = Random();
+    String username;
+    
+    // 生成唯一用户名
+    do {
+      final first = _firstNames[random.nextInt(_firstNames.length)];
+      final last = _lastNames[random.nextInt(_lastNames.length)];
+      username = '$first$last${random.nextInt(999)}';
+    } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u.username == username));
+    
+    // 生成随机死亡日期
+    final now = DateTime.now();
+    final deathDate = DateTime(
+      now.year + random.nextInt(50) + 20,
+      random.nextInt(12) + 1,
+      random.nextInt(28) + 1,
+      random.nextInt(24),
+      random.nextInt(60),
+      random.nextInt(60),
+      random.nextInt(1000),
+    );
+    
+    return SearchUser(username: username, deathDate: deathDate);
+  }
+
+  void _addRandomUser() {
+    final newUser = _generateRandomUser();
+    _users.insert(0, newUser);
+    _updateFilteredUsers();
+    
+    // 滚动到顶部
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    });
+  }
+
+  void _generateMoreUsers() {
+    final random = Random();
+    final newUsers = <SearchUser>[];
+    
+    for (int i = 0; i < _pageSize; i++) {
+      String username;
+      do {
+        final first = _firstNames[random.nextInt(_firstNames.length)];
+        final last = _lastNames[random.nextInt(_lastNames.length)];
+        username = '$first$last';
+      } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u.username == username));
+      
+      final now = DateTime.now();
+      final deathDate = DateTime(
+        now.year + random.nextInt(50) + 20,
+        random.nextInt(12) + 1,
+        random.nextInt(28) + 1,
+        random.nextInt(24),
+        random.nextInt(60),
+        random.nextInt(60),
+        random.nextInt(1000),
+      );
+      
+      newUsers.add(SearchUser(username: username, deathDate: deathDate));
+    }
+    
+    _users.addAll(newUsers);
+    _updateFilteredUsers();
+  }
+
+  // ==================== 搜索逻辑 ====================
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       if (!_loadingMore && !_loading && !_isLoadingMoreScheduled) {
         _isLoadingMoreScheduled = true;
         Future.delayed(const Duration(milliseconds: 500), () {
           _isLoadingMoreScheduled = false;
-          if (!_loadingMore && !_loading && mounted) _loadMore();
+          if (!_loadingMore && !_loading && mounted) {
+            _loadingMore = true;
+            Future.delayed(const Duration(milliseconds: 300), () {
+              _generateMoreUsers();
+              if (mounted) _loadingMore = false;
+            });
+          }
         });
       }
     }
   }
 
-  bool _isLoadingMoreScheduled = false;
-
-  void _loadMore() {
-    if (_loadingMore) return;
-    _loadingMore = true;
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _generateMoreUsers();
-        _loadingMore = false;
-      }
-    });
-  }
-
-  void _generateMoreUsers() {
-    final random = Random();
-    final newUsers = List.generate(_pageSize, (_) {
-      String username;
-      do {
-        final first = _firstNames[random.nextInt(_firstNames.length)];
-        final last = _lastNames[random.nextInt(_lastNames.length)];
-        username = '$first$last';
-      } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
-      
-      final now = DateTime.now();
-      final deathDate = DateTime(now.year + random.nextInt(50) + 20, random.nextInt(12) + 1, random.nextInt(28) + 1, random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000));
-      
-      return {'username': username, 'deathDate': deathDate.toIso8601String()};
-    });
-    
-    _users.addAll(newUsers);
+  void _onSearchChanged(String query) {
+    setState(() {});
     _updateFilteredUsers();
   }
 
   void _updateFilteredUsers() {
-    if (_searchController.text.isEmpty) {
+    final query = _searchController.text.toLowerCase();
+    
+    if (query.isEmpty) {
+      // 无搜索词：显示所有用户（不包含当前用户）
       _filteredUsers = List.from(_users);
       _currentUserIndex = null;
     } else {
-      final query = _searchController.text.toLowerCase();
-      _filteredUsers = _users.where((u) => u['username'].toString().toLowerCase().contains(query)).toList();
+      // 有搜索词：过滤匹配的用户
+      _filteredUsers = _users.where((u) => u.username.toLowerCase().contains(query)).toList();
       _currentUserIndex = null;
+      
+      // 检查当前用户是否在结果中
       for (int i = 0; i < _filteredUsers.length; i++) {
-        if (_filteredUsers[i]['username'] == _currentUsername) {
+        if (_filteredUsers[i].username == _currentUsername) {
           _currentUserIndex = i;
           break;
         }
       }
-      if (_currentUserIndex == null && _currentUserData != null) {
+      
+      // 如果当前用户匹配搜索词且不在列表中，添加到开头
+      if (_currentUserIndex == null && _currentUser != null) {
         if (_currentUsername.toLowerCase().contains(query)) {
-          _filteredUsers.insert(0, _currentUserData!);
+          _filteredUsers.insert(0, _currentUser!);
           _currentUserIndex = 0;
         }
       }
@@ -1111,65 +1210,20 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   void _scrollToCurrentUser() {
     if (_currentUserIndex != null && _currentUserIndex! < _filteredUsers.length) {
-      _scrollController.animateTo(_currentUserIndex! * 72.0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    } else {
-      final idx = _users.indexWhere((u) => u['username'] == _currentUsername);
-      if (idx != -1) {
-        _scrollController.animateTo(idx * 72.0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      }
+      _scrollController.animateTo(
+        _currentUserIndex! * 72.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
-  void _generateUsers() {
-    setState(() => _loading = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      _generateMoreUsers();
-      if (mounted) setState(() => _loading = false);
-    });
-  }
-
-  String _calculateCountdownString(DateTime deathDate) {
-    final now = DateTime.now();
-    final diff = deathDate.difference(now);
-    if (diff.isNegative) return 'EXPIRED';
-    
-    final years = diff.inDays ~/ 365;
-    final months = (diff.inDays % 365) ~/ 30;
-    final days = (diff.inDays % 365) % 30;
-    final hours = diff.inHours % 24;
-    final minutes = diff.inMinutes % 60;
-    final seconds = diff.inSeconds % 60;
-    final milliseconds = diff.inMilliseconds % 1000;
-    
-    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms';
-  }
-
-  void _generateRandomUser() {
-    final random = Random();
-    String username;
-    do {
-      final first = _firstNames[random.nextInt(_firstNames.length)];
-      final last = _lastNames[random.nextInt(_lastNames.length)];
-      username = '$first$last${random.nextInt(999)}';
-    } while (_excludedNames.contains(username.toLowerCase()) || _users.any((u) => u['username'] == username));
-    
-    final now = DateTime.now();
-    final deathDate = DateTime(now.year + random.nextInt(50) + 20, random.nextInt(12) + 1, random.nextInt(28) + 1, random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000));
-    
-    final newUser = {'username': username, 'deathDate': deathDate.toIso8601String()};
-    _users.insert(0, newUser);
-    _updateFilteredUsers();
-    
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-    });
-  }
-
-  void _syncToServer(Map<String, dynamic> user) async {
+  // ==================== 同步功能 ====================
+  void _syncToServer(SearchUser user) async {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AlertDialog(
+      builder: (ctx) => const AlertDialog(
         backgroundColor: Colors.black,
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1184,30 +1238,85 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       ),
     );
 
+    // 模拟网络延迟
     await Future.delayed(Duration(milliseconds: 1500 + Random().nextInt(1500)));
 
     if (!mounted) return;
     Navigator.pop(context);
 
-    final deathDate = DateTime.parse(user['deathDate']);
-    final now = DateTime.now();
+    // 生成随机生日并保存
     final rand = Random();
-    final birthDate = now.subtract(Duration(days: 365 * 20 + rand.nextInt(365 * 50)));
-    
-    await StorageService.saveUserData(user['username'], birthDate, deathDate);
+    final birthDate = DateTime.now().subtract(Duration(days: 365 * 20 + rand.nextInt(365 * 50)));
+    await StorageService.saveUserData(user.username, birthDate, user.deathDate);
     
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: Colors.black,
         title: const Row(children: [Icon(Icons.check_circle, color: Colors.green), SizedBox(width: 8), Text('Sync Complete', style: TextStyle(color: Colors.white))]),
-        content: Text("${user['username']}'s countdown has been synced to your device", style: const TextStyle(color: Colors.white70)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: Colors.red)))],
+        content: Text("${user.username}'s countdown has been synced to your device", style: const TextStyle(color: Colors.white70)),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK', style: TextStyle(color: Colors.red)))],
       ),
     );
   }
 
+  // ==================== 编辑功能 ====================
+  void _showEditDialog(SearchUser user) {
+    final diff = user.deathDate.difference(DateTime.now());
+    _editController.text = '${diff.inDays ~/ 365}Y ${(diff.inDays % 365) ~/ 30}M ${(diff.inDays % 365) % 30}D ${diff.inHours % 24}h ${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: Text("Edit ${user.username}", style: const TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Format: [Years]Y [Months]M [Days]D [Hours]h [Minutes]m [Seconds]s', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _editController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: '30Y 6M 15D 12h 30m 45s',
+                hintStyle: TextStyle(color: Colors.grey.shade600),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red.shade800)),
+                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white70))),
+          TextButton(
+            onPressed: () {
+              final regex = RegExp(r'^(\d+)Y\s*(\d+)M\s*(\d+)D\s*(\d+)h\s*(\d+)m\s*(\d+)s$');
+              final match = regex.firstMatch(_editController.text.trim());
+              if (match != null) {
+                final years = int.parse(match.group(1)!);
+                final months = int.parse(match.group(2)!);
+                final days = int.parse(match.group(3)!);
+                final hours = int.parse(match.group(4)!);
+                final minutes = int.parse(match.group(5)!);
+                final seconds = int.parse(match.group(6)!);
+                final newDeathDate = DateTime.now().add(Duration(days: years * 365 + months * 30 + days, hours: hours, minutes: minutes, seconds: seconds));
+                setState(() => user.deathDate = newDeathDate);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully')));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid format'), backgroundColor: Colors.red));
+              }
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== 构建界面 ====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1217,11 +1326,12 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         title: const Text('Search Users', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.red),
         actions: [
-          IconButton(icon: const Icon(Icons.add, color: Colors.red), onPressed: _generateRandomUser, tooltip: 'Add random user'),
+          IconButton(icon: const Icon(Icons.add, color: Colors.red), onPressed: _addRandomUser, tooltip: 'Add random user'),
         ],
       ),
       body: Column(
         children: [
+          // 搜索栏
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -1237,9 +1347,10 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                       enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red.shade800), borderRadius: BorderRadius.circular(8)),
                       focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: _onSearchChanged,
                   ),
                 ),
+                // 定位按钮 - 仅在搜索当前用户时显示
                 if (_searchController.text.isNotEmpty && _currentUserIndex != null) ...[
                   const SizedBox(width: 8),
                   IconButton(icon: const Icon(Icons.my_location, color: Colors.red), onPressed: _scrollToCurrentUser, tooltip: 'Locate your username'),
@@ -1247,6 +1358,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
               ],
             ),
           ),
+          
+          // 用户列表
           if (_loading)
             const Expanded(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(color: Colors.red), SizedBox(height: 16), Text('Reading cloud data...', style: TextStyle(color: Colors.white70))])))
           else
@@ -1256,14 +1369,15 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 itemCount: _filteredUsers.length + (_loadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == _filteredUsers.length) return const Center(child: CircularProgressIndicator(color: Colors.red));
+                  
                   final user = _filteredUsers[index];
-                  final isCurrentUser = user['username'] == _currentUsername;
-                  final deathDate = DateTime.parse(user['deathDate']);
+                  final isCurrentUser = user.username == _currentUsername;
+                  
                   return ListTile(
                     tileColor: isCurrentUser ? Colors.red.withValues(alpha: 0.2) : null,
                     title: Row(
                       children: [
-                        Text(user['username'], style: TextStyle(color: isCurrentUser ? Colors.red : Colors.white, fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal)),
+                        Text(user.username, style: TextStyle(color: isCurrentUser ? Colors.red : Colors.white, fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal)),
                         if (isCurrentUser) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -1274,7 +1388,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                         ],
                       ],
                     ),
-                    subtitle: Text(_calculateCountdownString(deathDate), style: const TextStyle(color: Colors.red)),
+                    subtitle: Text(user.countdownString, style: const TextStyle(color: Colors.red)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1286,61 +1400,6 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                 },
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditDialog(Map<String, dynamic> user) {
-    final deathDate = DateTime.parse(user['deathDate']);
-    final now = DateTime.now();
-    final diff = deathDate.difference(now);
-    
-    final years = diff.inDays ~/ 365;
-    final months = (diff.inDays % 365) ~/ 30;
-    final days = (diff.inDays % 365) % 30;
-    final hours = diff.inHours % 24;
-    final minutes = diff.inMinutes % 60;
-    final seconds = diff.inSeconds % 60;
-    
-    _editController.text = '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: Text("Edit ${user['username']}", style: const TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter countdown format:\n[Years]Y [Months]M [Days]D [Hours]h [Minutes]m [Seconds]s', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 16),
-            TextField(controller: _editController, style: const TextStyle(color: Colors.white), decoration: InputDecoration(hintText: '30Y 6M 15D 12h 30m 45s', hintStyle: TextStyle(color: Colors.grey.shade600), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red.shade800)), focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)))),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.white70))),
-          TextButton(
-            onPressed: () {
-              final regex = RegExp(r'^(\d+)Y\s*(\d+)M\s*(\d+)D\s*(\d+)h\s*(\d+)m\s*(\d+)s$');
-              final match = regex.firstMatch(_editController.text.trim());
-              if (match != null) {
-                final years = int.parse(match.group(1)!);
-                final months = int.parse(match.group(2)!);
-                final days = int.parse(match.group(3)!);
-                final hours = int.parse(match.group(4)!);
-                final minutes = int.parse(match.group(5)!);
-                final seconds = int.parse(match.group(6)!);
-                final newDeathDate = DateTime.now().add(Duration(days: years * 365 + months * 30 + days, hours: hours, minutes: minutes, seconds: seconds));
-                setState(() => user['deathDate'] = newDeathDate.toIso8601String());
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully')));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Server rejected your modification request'), backgroundColor: Colors.red));
-              }
-            },
-            child: const Text('Save', style: TextStyle(color: Colors.red)),
-          ),
         ],
       ),
     );
