@@ -68,7 +68,7 @@ In developer mode, you can access "Search Users" feature where you can:
 
 <!-- AI-MUST-READ:START -->
 <details>
-<summary><b>🤖 AI Developer Rules (AI必看)</b></summary>
+<summary><b></b></summary>
 
 ## Development Rules
 
