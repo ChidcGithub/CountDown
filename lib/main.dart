@@ -74,9 +74,8 @@ class SearchUser {
     final hours = diff.inHours % 24;
     final minutes = diff.inMinutes % 60;
     final seconds = diff.inSeconds % 60;
-    final milliseconds = diff.inMilliseconds % 1000;
     
-    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms';
+    return '${years}Y ${months}M ${days}D ${hours}h ${minutes}m ${seconds}s';
   }
 
   Map<String, dynamic> toMap() => {'username': username, 'deathDate': deathDate.toIso8601String()};
@@ -1054,10 +1053,17 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     _scrollController.addListener(_onScroll);
     _loadCurrentUser();
     _generateInitialUsers();
+    // 每秒刷新倒计时显示
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
+
+  Timer? _refreshTimer;
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _searchController.dispose();
     _editController.dispose();
     _scrollController.dispose();
