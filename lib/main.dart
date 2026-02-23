@@ -66,8 +66,6 @@ class AppConstants {
 }
 
 class StorageKeys {
-  static const String hasSeenWelcome = 'hasSeenWelcome';
-  static const String hasShownRecovery = 'hasShownRecovery';
   static const String deviceId = 'deviceId';
   static const String username = 'username';
   static const String birthDate = 'birthDate';
@@ -164,26 +162,6 @@ class StorageService {
       );
     }
     return null;
-  }
-
-  static Future<bool> hasSeenWelcome() async {
-    final p = await prefs;
-    return p.getBool(StorageKeys.hasSeenWelcome) ?? false;
-  }
-
-  static Future<void> setHasSeenWelcome(bool value) async {
-    final p = await prefs;
-    await p.setBool(StorageKeys.hasSeenWelcome, value);
-  }
-
-  static Future<bool> hasShownRecovery() async {
-    final p = await prefs;
-    return p.getBool(StorageKeys.hasShownRecovery) ?? false;
-  }
-
-  static Future<void> setHasShownRecovery(bool value) async {
-    final p = await prefs;
-    await p.setBool(StorageKeys.hasShownRecovery, value);
   }
 
   static Future<void> saveUserData(String username, DateTime birthDate, DateTime deathDate) async {
@@ -521,7 +499,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: ElevatedButton(
                   onPressed: agreed ? () async {
                     final navigator = Navigator.of(context);
-                    await StorageService.setHasSeenWelcome(true);
                     if (!mounted) return;
                     navigator.pushReplacement(MaterialPageRoute(builder: (_) => const UserSetupScreen()));
                   } : null,
