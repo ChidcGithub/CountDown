@@ -320,17 +320,18 @@ class _InitialLoaderState extends State<InitialLoader> {
   Future<void> _checkAndNavigate() async {
     final isFirst = await StorageService.isFirstLaunch();
     final encryptedData = await StorageService.loadEncryptedUserData();
+    final userData = await StorageService.loadUserData();
     if (!mounted) return;
 
     if (isFirst && encryptedData != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => MainCountdownScreen(data: encryptedData)),
+        MaterialPageRoute(builder: (_) => SplashScreen(data: encryptedData)),
       );
-    } else if (encryptedData != null) {
+    } else if (userData != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => MainCountdownScreen(data: encryptedData)),
+        MaterialPageRoute(builder: (_) => MainCountdownScreen(data: userData)),
       );
     } else {
       Navigator.pushReplacement(
@@ -350,7 +351,8 @@ class _InitialLoaderState extends State<InitialLoader> {
 }
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final CountdownData data;
+  const SplashScreen({super.key, required this.data});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -358,13 +360,12 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _flashController;
-  bool _isRecovery = false;
 
   @override
   void initState() {
     super.initState();
     _flashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _checkAndNavigate();
+    _triggerRecoveryEffect();
   }
 
   @override
@@ -379,27 +380,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       _flashController.forward().then((_) => _flashController.reverse());
       await Future.delayed(const Duration(milliseconds: 300));
     }
-  }
 
-  Future<void> _checkAndNavigate() async {
-    final userData = await StorageService.loadUserData();
-    final hasShownRecovery = await StorageService.hasShownRecovery();
-    final isRecovery = userData != null && !hasShownRecovery;
-
-    if (isRecovery) {
-      setState(() => _isRecovery = true);
-      _triggerRecoveryEffect();
-      await StorageService.setHasShownRecovery(true);
-    }
-
-    await Future.delayed(Duration(seconds: isRecovery ? 3 : 2));
+    await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
-    if (userData != null) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainCountdownScreen(data: userData)));
-    } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => MainCountdownScreen(data: widget.data)),
+    );
   }
 
   @override
@@ -414,16 +402,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_isRecovery ? Icons.restore : Icons.hourglass_bottom, size: 80, color: isFlashing ? Colors.black : Colors.red),
+                Icon(Icons.restore, size: 80, color: isFlashing ? Colors.black : Colors.red),
                 const SizedBox(height: 20),
                 Text(
-                  _isRecovery ? 'COUNTDOWN RESTORED' : 'COUNTDOWN',
-                  style: TextStyle(fontSize: _isRecovery ? 28 : 40, fontWeight: FontWeight.w900, color: isFlashing ? Colors.black : Colors.red, letterSpacing: 10),
+                  'COUNTDOWN RESTORED',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: isFlashing ? Colors.black : Colors.red, letterSpacing: 10),
                 ),
-                if (_isRecovery) ...[
-                  const SizedBox(height: 20),
-                  Text('Your countdown has been recovered', style: TextStyle(fontSize: 16, color: isFlashing ? Colors.black54 : Colors.white54)),
-                ],
+                const SizedBox(height: 20),
+                Text('Your countdown has been recovered', style: TextStyle(fontSize: 16, color: isFlashing ? Colors.black54 : Colors.white54)),
               ],
             ),
           ),
