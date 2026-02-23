@@ -210,9 +210,14 @@ class _InitialLoaderState extends State<InitialLoader> {
     if (!mounted) return;
 
     if (userData != null) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainCountdownScreen(data: userData)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SplashScreen()));
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
+      final hasSeenWelcome = await StorageService.hasSeenWelcome();
+      if (hasSeenWelcome) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserSetupScreen()));
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
+      }
     }
   }
 
@@ -969,7 +974,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     'Jacob', 'Kathleen', 'Gary', 'Amy', 'Nicholas', 'Angela', 'Eric', 'Shirley', 'Jonathan', 'Anna',
     'Stephen', 'Brenda', 'Larry', 'Pamela', 'Justin', 'Emma', 'Scott', 'Nicole', 'Brandon', 'Helen',
     'Benjamin', 'Samantha', 'Samuel', 'Katherine', 'Raymond', 'Christine', 'Gregory', 'Debra', 'Frank', 'Rachel',
-    'Alexander', 'Carolyn', 'Patrick', 'Janet', 'Jack', 'Catherine', 'Dennis', 'Maria', 'Jerry', 'Heather'
+    'Alexander', 'Carolyn', 'Patrick', 'Janet', 'Jack', 'Catherine', 'Dennis', 'Maria', 'Jerry', 'Heather',
+    'Tyler', ' Abigail', 'Adam', 'Adriana', 'Adrian', 'Aiden', 'Alan', 'Alec', 'Alexa', 'Alice',
+    'Alicia', 'Allen', 'Amber', 'Andre', 'Andrea', 'Angel', 'Angelina', 'Angie', 'Anita', 'Ann',
+    'Anna', 'Anne', 'Annie', 'Anthony', 'Antonio', 'Ariana', 'Ariel', 'Arthur', 'Ashlee', 'Ashley',
+    'Audrey', 'Austin', 'Autumn', 'Ava', 'Bailey', 'Ben', 'Beverly', 'Bill', 'Billy', 'Blake',
+    'Bob', 'Bobby', 'Bonnie', 'Brad', 'Bradley', 'Brady', 'Brandi', 'Brandon', 'Brandy', 'Brayden',
+    'Breanna', 'Brent', 'Brett', 'Brian', 'Brooke', 'Bruce', 'Bryan', 'Bryce', 'Caleb', 'Calvin',
+    'Cameron', 'Candice', 'Carla', 'Carlos', 'Carol', 'Caroline', 'Carolyn', 'Carrie', 'Casey', 'Cassandra',
+    'Cassidy', 'Catherine', 'Cathy', 'Charlene', 'Charles', 'Charlie', 'Charlotte', 'Chelsea', 'Chelsey', 'Cheryl',
+    'Cheyenne', 'Chris', 'Christian', 'Christina', 'Christine', 'Christopher', 'Christy', 'Cindy', 'Claire',
+    'Clara', 'Clarence', 'Clayton', 'Clifford', 'Colleen', 'Colin', 'Collin', 'Colton', 'Connor', 'Corey',
+    'Cory', 'Courtney', 'Craig', 'Cristina', 'Crystal', 'Cynthia', 'Dakota', 'Dale', 'Dalton', 'Damon',
+    'Dan', 'Dana', 'Daniel', 'Danielle', 'Danny', 'Darin', 'Darius', 'Dave', 'David', 'Dawn'
   ];
 
   final List<String> _lastNames = [
