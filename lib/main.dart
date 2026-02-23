@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -750,38 +749,47 @@ class _CountdownRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final fontSize = (screenWidth * 0.22).clamp(50.0, 100.0);
-    final labelFontSize = (screenWidth * 0.035).clamp(12.0, 18.0);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final fontSize = (screenWidth * 0.28).clamp(60.0, 140.0);
+    final labelFontSize = (screenWidth * 0.04).clamp(14.0, 22.0);
+    return SizedBox(
+      height: screenHeight / 8,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: screenWidth * 0.35,
-            child: Text(
-              value.toString().padLeft(2, '0'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: GoogleFonts.roboto().fontFamily,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w900,
-                color: isZero ? Colors.grey : Colors.red,
-                height: 1,
+            width: screenWidth * 0.5,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w900,
+                  color: isZero ? Colors.grey : Colors.red,
+                  height: 1,
+                  letterSpacing: 4,
+                ),
               ),
             ),
           ),
-          SizedBox(width: screenWidth * 0.02),
+          SizedBox(width: screenWidth * 0.03),
           SizedBox(
-            width: screenWidth * 0.12,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: GoogleFonts.roboto().fontFamily,
-                fontSize: labelFontSize,
-                fontWeight: FontWeight.w500,
-                color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
+            width: screenWidth * 0.15,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.w600,
+                  color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
+                ),
               ),
             ),
           ),
