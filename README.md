@@ -52,9 +52,9 @@ flutter build apk --debug
 ## Developer Mode
 
 To enable developer mode:
-1. Go to Settings (tap top-left corner 5 times)
-2. Tap on Version 3 times
-3. Tap on Settings title 5 times
+1. Go to Settings (tap ■■■ ■■■■■-■■■ ■ times)
+2. Tap on ■■■■■■■ ■ times
+3. Tap on title ■ times
 
 In developer mode, you can access "Search Users" feature where you can:
 - Browse generated users with infinite scroll
