@@ -52,7 +52,7 @@ flutter build apk --debug
 ## Developer Mode
 
 To enable developer mode:
-1. Go to Settings (tap ■■■ ■■■■■-■■■ ■ times)
+1. Go to Settings (tap ■■■ ■■■-■■■■ ■ times)
 2. Tap on ■■■■■■■ ■ times
 3. Tap on title ■ times
 
