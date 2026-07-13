@@ -529,34 +529,37 @@ private fun CountdownRow(
     maxFont: TextUnit,
     labelFont: TextUnit,
 ) {
-    Row(
-        verticalAlignment = Alignment.Bottom,
+    Box(
         modifier = Modifier
             .fillMaxWidth(0.85f)
             .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center,
+        contentAlignment = Alignment.Center,
     ) {
-        BasicText(
-            text = value.toString().padStart(2, '0'),
-            style = TextStyle(
-                color = if (isWhite) NumberWhite else DarkRed,
+        Box {
+            BasicText(
+                text = value.toString().padStart(2, '0'),
+                style = TextStyle(
+                    color = if (isWhite) NumberWhite else DarkRed,
+                    fontFamily = AppFontFamily,
+                    fontWeight = FontWeight.Black,
+                ),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 10.sp,
+                    maxFontSize = maxFont,
+                    stepSize = 0.5.sp,
+                ),
+            )
+            Text(
+                label,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 6.dp, y = (-6).dp),
+                color = if (isWhite) Color.White.copy(alpha = 0.5f) else LabelGray,
+                fontSize = labelFont, fontWeight = FontWeight.Black,
                 fontFamily = AppFontFamily,
-                fontWeight = FontWeight.Black,
-            ),
-            maxLines = 1,
-            autoSize = TextAutoSize.StepBased(
-                minFontSize = 10.sp,
-                maxFontSize = maxFont,
-                stepSize = 0.5.sp,
-            ),
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            label,
-            color = if (isWhite) Color.White.copy(alpha = 0.5f) else LabelGray,
-            fontSize = labelFont, fontWeight = FontWeight.Black,
-            fontFamily = AppFontFamily,
-        )
+            )
+        }
     }
 }
 
