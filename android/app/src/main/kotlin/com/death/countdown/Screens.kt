@@ -4,6 +4,11 @@ package com.death.countdown
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.autofill.AutofillType
 import androidx.compose.foundation.autofill.autofill
@@ -32,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,42 +70,50 @@ sealed class Screen {
 // ==================== App Root ====================
 @Composable
 fun CountdownApp(initial: Screen) {
-    var screen by remember { mutableStateOf(initial) }
-    when (val s = screen) {
-        Screen.Loading -> {
-            LaunchedEffect(Unit) {
-                val isFirst = StorageService.isFirstLaunch()
-                val enc = StorageService.loadEncryptedUserData()
-                val data = StorageService.loadUserData()
-                screen = when {
-                    isFirst && enc != null -> Screen.Splash(enc)
-                    data != null -> Screen.Main(data)
-                    else -> Screen.Welcome
+    var screen by remember { mutableStateOf<Screen>(initial) }
+    AnimatedContent(
+        targetState = screen,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(280)) togetherWith fadeOut(animationSpec = tween(180))
+        },
+        label = "nav",
+    ) { s ->
+        when (s) {
+            Screen.Loading -> {
+                LaunchedEffect(Unit) {
+                    val isFirst = StorageService.isFirstLaunch()
+                    val enc = StorageService.loadEncryptedUserData()
+                    val data = StorageService.loadUserData()
+                    screen = when {
+                        isFirst && enc != null -> Screen.Splash(enc)
+                        data != null -> Screen.Main(data)
+                        else -> Screen.Welcome
+                    }
                 }
+                LoadingScreen()
             }
-            LoadingScreen()
+            Screen.Welcome -> WelcomeScreen(
+                onAgree = { screen = Screen.Setup },
+                onViewFull = { screen = Screen.FullAgreement },
+            )
+            Screen.FullAgreement -> FullAgreementScreen(onBack = { screen = Screen.Welcome })
+            Screen.Setup -> UserSetupScreen(
+                onStart = { d -> screen = Screen.Main(d) }
+            )
+            is Screen.Splash -> SplashScreen(data = s.data, onDone = { screen = Screen.Main(s.data) })
+            is Screen.Main -> MainCountdownScreen(
+                data = s.data,
+                onOpenSettings = { screen = Screen.Settings },
+            )
+            Screen.Settings -> SettingsScreen(
+                onBack = { screen = Screen.Main(StorageService.loadUserData()!!) },
+                onDevMode = { screen = Screen.DevRed },
+                onSearchUsers = { screen = Screen.SearchUsers },
+                onCleared = { screen = Screen.Welcome },
+            )
+            Screen.DevRed -> DevModeRedScreen(onDone = { screen = Screen.Settings })
+            Screen.SearchUsers -> SearchUsersScreen(onBack = { screen = Screen.Settings })
         }
-        Screen.Welcome -> WelcomeScreen(
-            onAgree = { screen = Screen.Setup },
-            onViewFull = { screen = Screen.FullAgreement },
-        )
-        Screen.FullAgreement -> FullAgreementScreen(onBack = { screen = Screen.Welcome })
-        Screen.Setup -> UserSetupScreen(
-            onStart = { d -> screen = Screen.Main(d) }
-        )
-        is Screen.Splash -> SplashScreen(data = s.data, onDone = { screen = Screen.Main(s.data) })
-        is Screen.Main -> MainCountdownScreen(
-            data = s.data,
-            onOpenSettings = { screen = Screen.Settings },
-        )
-        Screen.Settings -> SettingsScreen(
-            onBack = { screen = Screen.Main(StorageService.loadUserData()!!) },
-            onDevMode = { screen = Screen.DevRed },
-            onSearchUsers = { screen = Screen.SearchUsers },
-            onCleared = { screen = Screen.Welcome },
-        )
-        Screen.DevRed -> DevModeRedScreen(onDone = { screen = Screen.Settings })
-        Screen.SearchUsers -> SearchUsersScreen(onBack = { screen = Screen.Settings })
     }
 }
 
@@ -135,7 +147,7 @@ private fun SplashScreen(data: CountdownData, onDone: () -> Unit) {
             Text(
                 "COUNTDOWN RESTORED",
                 color = if (flash) Color.Black else DarkRed,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = AppFontFamily,
                 fontSize = 28.sp, fontWeight = FontWeight.W900,
                 letterSpacing = 10.sp,
             )
@@ -157,7 +169,7 @@ private fun WelcomeScreen(onAgree: () -> Unit, onViewFull: () -> Unit) {
             Icon(Icons.Default.Warning, null, Modifier.size(80.dp), tint = DarkRed)
             Spacer(Modifier.height(30.dp))
             Text("JUST FOR FUN", color = DarkRed, fontSize = 32.sp,
-                fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold, fontFamily = AppFontFamily, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
             Text("Do not take this seriously", color = Color.White.copy(alpha = 0.7f),
@@ -377,7 +389,7 @@ private fun UserSetupScreen(onStart: (CountdownData) -> Unit) {
     val valid = name.isNotBlank() && date != null
     Scaffold(containerColor = Color.Black) { p ->
         Column(Modifier.padding(p).padding(24.dp).fillMaxSize()) {
-            Text("Setup", color = DarkRed, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+            Text("Setup", color = DarkRed, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = AppFontFamily)
             Spacer(Modifier.height(40.dp))
             Text("Enter Your Name", color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
@@ -465,11 +477,14 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
             },
         contentAlignment = Alignment.Center
     ) {
-        // Max font derived from available height (5 rows share the vertical space)
-        val maxFont = with(LocalDensity.current) { (maxHeight.toSp() / 5f) * 0.85f }
+        // 5 rows + label below = each row gets ~1/5 of height. Use 0.7 factor for padding.
+        val maxFont = with(LocalDensity.current) { (maxHeight.toSp() / 5f) * 0.7f }
         val labelFont = maxFont / 3f
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+        ) {
             val years = remember(tick) { data.years }
             val days = remember(tick) { data.days }
             val hours = remember(tick) { data.hours }
@@ -517,13 +532,15 @@ private fun CountdownRow(
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.fillMaxWidth(0.85f).weight(1f).padding(vertical = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.Center,
     ) {
         BasicText(
             text = value.toString().padStart(2, '0'),
             color = { if (isWhite) NumberWhite else DarkRed },
-            fontFamily = FontFamily.Monospace,
+            fontFamily = AppFontFamily,
             fontWeight = FontWeight.Black,
             maxLines = 1,
             autoSize = TextAutoSize.StepBased(
@@ -531,14 +548,13 @@ private fun CountdownRow(
                 maxFontSize = maxFont,
                 stepSize = 0.5.sp,
             ),
-            modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.width(12.dp))
         Text(
             label,
             color = if (isWhite) Color.White.copy(alpha = 0.5f) else LabelGray,
-            fontSize = labelFont, fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace
+            fontSize = labelFont, fontWeight = FontWeight.Black,
+            fontFamily = AppFontFamily,
         )
     }
 }
@@ -654,7 +670,7 @@ private fun DevModeRedScreen(onDone: () -> Unit) {
             Icon(Icons.Default.Settings, null, Modifier.size(80.dp), tint = Color.Black)
             Spacer(Modifier.height(20.dp))
             Text("DEVELOPER MODE", color = Color.Black, fontSize = 32.sp,
-                fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                fontWeight = FontWeight.Bold, fontFamily = AppFontFamily)
         }
     }
 }
@@ -798,7 +814,7 @@ private fun SearchUsersScreen(onBack: () -> Unit) {
                                     }
                                 }
                             },
-                            supportingContent = { Text(u.countdownString, color = DarkRed, fontFamily = FontFamily.Monospace) },
+                            supportingContent = { Text(u.countdownString, color = DarkRed, fontFamily = AppFontFamily) },
                             trailingContent = {
                                 Row {
                                     IconButton(onClick = { /* sync - simplified */ }) {
