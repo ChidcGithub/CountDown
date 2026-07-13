@@ -4,12 +4,12 @@
 
 # Countdown
 
-A death countdown app for entertainment purposes only. This app displays a countdown timer showing years, months, days, hours, minutes, and seconds.
+A death countdown app for entertainment purposes only. Built with Jetpack Compose. Displays a countdown timer showing years, days, hours, minutes, and seconds with monospace font.
 
 ## Features
 
 - Death countdown timer with 5 rows (YRS, DAY, HRS, MIN, SEC)
-- Ultra bold countdown numbers for better visibility
+- Ultra bold countdown numbers in monospace font for better visibility
 - Smart startup: automatically detects existing data and skips welcome screen
 - First-time welcome screen with user agreement
 - Username and birth date setup
@@ -17,12 +17,10 @@ A death countdown app for entertainment purposes only. This app displays a count
 - Hidden developer mode (tap version 3 times + settings title 5 times)
 - Search Users feature in developer mode:
   - Infinite scroll lazy loading
-  - 200+ common English names
+  - 100+ common English names
   - Real-time user generation
   - Search functionality with location button to find your username
   - Add random users
-  - Edit countdown and save
-  - Sync to server simulation
 
 ## Important Disclaimer
 
@@ -40,13 +38,15 @@ By using this application, you agree to the following terms:
 ## Installation
 
 ### Requirements
-- Android SDK 27 (Android 8.1) or higher
+- Android 8.1 (API 27) or higher
 - Target SDK 36
+- JDK 17
+- Android SDK with platforms;android-36 and build-tools;36.1.0
 
 ### Build from source
 ```bash
-flutter pub get
-flutter build apk --debug
+cd android
+./gradlew assembleDebug
 ```
 
 ## Developer Mode

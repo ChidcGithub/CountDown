@@ -1,14 +1,37 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
+    id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val versionName: String = File(rootProject.projectDir.parentFile, "version.txt")
+    .takeIf { it.exists() }?.readText()?.trim()?.ifBlank { "0.0.0" } ?: "0.0.0"
+val versionCode: Int = versionName.split(".").let { p ->
+    (p.getOrNull(0)?.toIntOrNull() ?: 0) * 10000 +
+    (p.getOrNull(1)?.toIntOrNull() ?: 0) * 100 +
+    (p.getOrNull(2)?.toIntOrNull() ?: 0)
 }
 
 android {
     namespace = "com.death.countdown"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.death.countdown"
+        minSdk = 27
+        targetSdk = 36
+        this.versionCode = versionCode
+        this.versionName = versionName
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -16,24 +39,25 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
-    defaultConfig {
-        applicationId = "com.death.countdown"
-        minSdk = 27
-        targetSdk = 36
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+    buildFeatures {
+        compose = true
+        buildConfig = true
     }
 
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
-        }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
-flutter {
-    source = "../.."
+dependencies {
+    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.core:core-ktx:1.13.1")
 }

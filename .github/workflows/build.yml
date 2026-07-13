@@ -18,30 +18,22 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
         with:
-          flutter-version: '3.41.2'
-          channel: 'stable'
-          
-      - name: Cache Flutter packages
-        uses: actions/cache@v4
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          path: |
-            ~/.pub-cache
-            ~/.gradle/caches
-            build/app/intermediates
-            build/app/outputs
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-
-            ${{ runner.os }}-gradle-
-            
+          packages: 'platforms;android-36 build-tools;36.1.0'
+
       - name: Get and increment version
         id: version
         run: |
@@ -67,7 +59,6 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "$NEW_VERSION" > version.txt
           echo "Version bumped from $PREV_VERSION to $NEW_VERSION"
-          echo "const String appVersion = '$NEW_VERSION';" > lib/version.dart
         shell: bash
 
       - name: Commit version update
@@ -78,21 +69,20 @@ jobs:
           git add version.txt
           git commit -m "Bump version to ${{ steps.version.outputs.new_version }}" || echo "No changes to commit"
           git push
-        
-      - name: Get dependencies
-        run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos
-        
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+        working-directory: android
+
       - name: Build APK
-        run: flutter build apk --release
-        
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        working-directory: android
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ steps.version.outputs.new_version }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Delete existing tag if exists
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -120,13 +110,13 @@ jobs:
               ref: 'refs/tags/v${{ steps.version.outputs.new_version }}',
               sha: context.sha
             })
-          
+
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.new_version }}
           body: ${{ github.event.inputs.release_notes }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: android/app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
