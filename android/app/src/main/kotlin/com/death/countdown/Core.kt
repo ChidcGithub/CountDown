@@ -1,7 +1,16 @@
 package com.death.countdown
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.Base64
@@ -92,19 +101,48 @@ data class SearchUser(
         }
 }
 
-// ==================== Storage ====================
+// ==================== Storage (DataStore-backed) ====================
+private val Context.dataStore by preferencesDataStore(name = "countdown_prefs")
+
 object StorageService {
-    private lateinit var prefs: SharedPreferences
+    private lateinit var appContext: Context
+    private val cache = mutableMapOf<String, Any?>()
+    private val writeScope = CoroutineScope(Dispatchers.IO)
 
     fun init(context: Context) {
-        prefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
+        appContext = context.applicationContext
+        // Preload all data into memory cache (single blocking read at startup)
+        runBlocking {
+            appContext.dataStore.data.first().asMap().forEach { (key, value) ->
+                cache[key.name] = value
+            }
+        }
+    }
+
+    private fun getString(key: String, default: String? = null): String? = cache[key] as? String ?: default
+    private fun getInt(key: String, default: Int = 0): Int = (cache[key] as? Int) ?: default
+    private fun getBoolean(key: String, default: Boolean = false): Boolean = (cache[key] as? Boolean) ?: default
+
+    private fun putString(key: String, value: String) {
+        cache[key] = value
+        writeScope.launch { appContext.dataStore.edit { it[stringPreferencesKey(key)] = value } }
+    }
+
+    private fun putInt(key: String, value: Int) {
+        cache[key] = value
+        writeScope.launch { appContext.dataStore.edit { it[intPreferencesKey(key)] = value } }
+    }
+
+    private fun putBoolean(key: String, value: Boolean) {
+        cache[key] = value
+        writeScope.launch { appContext.dataStore.edit { it[booleanPreferencesKey(key)] = value } }
     }
 
     fun getDeviceId(): String {
-        var id = prefs.getString(StorageKeys.DEVICE_ID, null)
+        var id = getString(StorageKeys.DEVICE_ID)
         if (id == null) {
             id = UUID.randomUUID().toString()
-            prefs.edit().putString(StorageKeys.DEVICE_ID, id).apply()
+            putString(StorageKeys.DEVICE_ID, id)
         }
         return id
     }
@@ -113,24 +151,22 @@ object StorageService {
         val key = CryptoUtil.hash(getDeviceId())
         val dataJson = "$username|$birthDate|$deathDate"
         val encrypted = CryptoUtil.encode(dataJson, key)
-        prefs.edit().apply {
-            putString(StorageKeys.ENCRYPTED_DATA, encrypted)
-            putString(StorageKeys.USERNAME, username)
-            putString(StorageKeys.BIRTH_DATE, birthDate.toString())
-            putString(StorageKeys.DEATH_DATE, deathDate.toString())
-        }.apply()
+        putString(StorageKeys.ENCRYPTED_DATA, encrypted)
+        putString(StorageKeys.USERNAME, username)
+        putString(StorageKeys.BIRTH_DATE, birthDate.toString())
+        putString(StorageKeys.DEATH_DATE, deathDate.toString())
     }
 
     fun loadUserData(): CountdownData? {
-        val username = prefs.getString(StorageKeys.USERNAME, null) ?: return null
-        val birthStr = prefs.getString(StorageKeys.BIRTH_DATE, null) ?: return null
-        val deathStr = prefs.getString(StorageKeys.DEATH_DATE, null) ?: return null
+        val username = getString(StorageKeys.USERNAME) ?: return null
+        val birthStr = getString(StorageKeys.BIRTH_DATE) ?: return null
+        val deathStr = getString(StorageKeys.DEATH_DATE) ?: return null
         return parseData(username, birthStr, deathStr)
     }
 
     fun loadEncryptedUserData(): CountdownData? {
         val key = CryptoUtil.hash(getDeviceId())
-        val encrypted = prefs.getString(StorageKeys.ENCRYPTED_DATA, null) ?: return null
+        val encrypted = getString(StorageKeys.ENCRYPTED_DATA) ?: return null
         val decrypted = CryptoUtil.decode(encrypted, key) ?: return null
         val parts = decrypted.split("|")
         if (parts.size != 3) return null
@@ -142,18 +178,21 @@ object StorageService {
     } catch (e: Exception) { null }
 
     fun isFirstLaunch(): Boolean {
-        if (!prefs.contains(StorageKeys.IS_FIRST_LAUNCH)) {
-            prefs.edit().putBoolean(StorageKeys.IS_FIRST_LAUNCH, false).apply()
+        if (!cache.containsKey(StorageKeys.IS_FIRST_LAUNCH)) {
+            putBoolean(StorageKeys.IS_FIRST_LAUNCH, false)
             return true
         }
         return false
     }
 
-    fun getDevVersionClicks() = prefs.getInt(StorageKeys.DEV_VERSION_CLICKS, 0)
-    fun getDevTitleClicks() = prefs.getInt(StorageKeys.DEV_TITLE_CLICKS, 0)
-    fun setDevVersionClicks(n: Int) = prefs.edit().putInt(StorageKeys.DEV_VERSION_CLICKS, n).apply()
-    fun setDevTitleClicks(n: Int) = prefs.edit().putInt(StorageKeys.DEV_TITLE_CLICKS, n).apply()
-    fun clearAllData() = prefs.edit().clear().apply()
+    fun getDevVersionClicks() = getInt(StorageKeys.DEV_VERSION_CLICKS, 0)
+    fun getDevTitleClicks() = getInt(StorageKeys.DEV_TITLE_CLICKS, 0)
+    fun setDevVersionClicks(n: Int) = putInt(StorageKeys.DEV_VERSION_CLICKS, n)
+    fun setDevTitleClicks(n: Int) = putInt(StorageKeys.DEV_TITLE_CLICKS, n)
+    fun clearAllData() {
+        cache.clear()
+        writeScope.launch { appContext.dataStore.edit { it.clear() } }
+    }
 }
 
 // ==================== Algorithm ====================

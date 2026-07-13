@@ -5,12 +5,17 @@ package com.death.countdown
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.autofill.AutofillType
+import androidx.compose.foundation.autofill.autofill
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -376,9 +383,18 @@ private fun UserSetupScreen(onStart: (CountdownData) -> Unit) {
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = name, onValueChange = { name = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .autofill(
+                        autofillTypes = listOf(AutofillType.Username),
+                        onFill = { name = it },
+                    ),
                 placeholder = { Text("Username", color = Color.Gray) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -449,16 +465,11 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
             },
         contentAlignment = Alignment.Center
     ) {
-        // Target row width = 85% of screen.
-        // Row content = 2-digit number (monospace char ≈ 0.6 * font) + 12dp spacing + 3-char label (font/3).
-        // 1.2X + 12dp + 0.6X = 1.8X + 12dp = targetW  ->  X = (targetW - 12dp) / 1.8
-        val density = LocalDensity.current
-        val targetWidthPx = with(density) { maxWidth.toPx() * 0.85f }
-        val spacingPx = with(density) { 12.dp.toPx() }
-        val numberSize = with(density) { ((targetWidthPx - spacingPx) / 1.8f).toSp() }
-        val labelSize = numberSize / 3f
+        // Max font derived from available height (5 rows share the vertical space)
+        val maxFont = with(LocalDensity.current) { (maxHeight.toSp() / 5f) * 0.85f }
+        val labelFont = maxFont / 3f
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.fillMaxSize()) {
             val years = remember(tick) { data.years }
             val days = remember(tick) { data.days }
             val hours = remember(tick) { data.hours }
@@ -482,8 +493,8 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
                     label = label,
                     value = value,
                     isWhite = idx > grayFromIndex,
-                    numberSize = numberSize,
-                    labelSize = labelSize,
+                    maxFont = maxFont,
+                    labelFont = labelFont,
                 )
             }
         }
@@ -501,24 +512,32 @@ private fun CountdownRow(
     label: String,
     value: Long,
     isWhite: Boolean,
-    numberSize: TextUnit,
-    labelSize: TextUnit,
+    maxFont: TextUnit,
+    labelFont: TextUnit,
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.fillMaxWidth(0.85f).weight(1f).padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Text(
-            value.toString().padStart(2, '0'),
-            color = if (isWhite) NumberWhite else DarkRed,
-            fontSize = numberSize, fontWeight = FontWeight.Black, letterSpacing = 4.sp,
-            fontFamily = FontFamily.Monospace
+        BasicText(
+            text = value.toString().padStart(2, '0'),
+            color = { if (isWhite) NumberWhite else DarkRed },
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 10.sp,
+                maxFontSize = maxFont,
+                stepSize = 0.5.sp,
+            ),
+            modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.width(12.dp))
         Text(
             label,
             color = if (isWhite) Color.White.copy(alpha = 0.5f) else LabelGray,
-            fontSize = labelSize, fontWeight = FontWeight.SemiBold,
+            fontSize = labelFont, fontWeight = FontWeight.SemiBold,
             fontFamily = FontFamily.Monospace
         )
     }
