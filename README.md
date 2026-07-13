@@ -8,12 +8,12 @@ A death countdown app for entertainment purposes only. This app displays a count
 
 ## Features
 
-- Death countdown timer with 6 rows (Year, Month, Day, Hour, Minute, Second)
+- Death countdown timer with 5 rows (YRS, DAY, HRS, MIN, SEC)
 - Ultra bold countdown numbers for better visibility
 - Smart startup: automatically detects existing data and skips welcome screen
 - First-time welcome screen with user agreement
 - Username and birth date setup
-- Black background with red/gray countdown numbers (gray starts from first zero value)
+- Black background with dark red/white countdown numbers (white starts below first zero value)
 - Hidden developer mode (tap version 3 times + settings title 5 times)
 - Search Users feature in developer mode:
   - Infinite scroll lazy loading
@@ -93,14 +93,12 @@ Input: username + birthDate + deviceId
 5. Death Date = birthDate + age years + hours:minutes:seconds.milliseconds
 ```
 
-### Gray Rule (Turn Gray When)
+### White Rule (Color Display)
 
-- YEAR: turns gray if ≤ 0
-- MONTH: turns gray if YEAR ≤ 0 AND MONTH ≤ 0
-- DAY: turns gray if YEAR ≤ 0 AND MONTH ≤ 0 AND DAY ≤ 0
-- HOUR: turns gray if YEAR ≤ 0 AND MONTH ≤ 0 AND DAY ≤ 0 AND HOUR ≤ 0
-- MINUTE: turns gray if all above ≤ 0 AND MINUTE ≤ 0
-- SECOND: turns gray if all above ≤ 0 AND SECOND ≤ 0
+Starting from the first zero-value unit (where all units above are also ≤ 0):
+- That unit and all units above it: dark red (`#CC0000`)
+- All units strictly below it: white
+- If no unit is zero, all display dark red
 
 ### Negative Handling
 

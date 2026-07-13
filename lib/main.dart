@@ -774,21 +774,19 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
   Widget build(BuildContext context) {
     final data = widget.data;
     final years = data.years;
-    final months = data.months;
     final days = data.days;
     final hours = data.hours;
     final minutes = data.minutes;
     final seconds = data.seconds;
-    
-    int grayFromIndex = 6;
+
+    int grayFromIndex = 5;
     if (years <= 0) grayFromIndex = 0;
-    if (years <= 0 && months <= 0) grayFromIndex = 1;
-    if (years <= 0 && months <= 0 && days <= 0) grayFromIndex = 2;
-    if (years <= 0 && months <= 0 && days <= 0 && hours <= 0) grayFromIndex = 3;
-    if (years <= 0 && months <= 0 && days <= 0 && hours <= 0 && minutes <= 0) grayFromIndex = 4;
-    if (years <= 0 && months <= 0 && days <= 0 && hours <= 0 && minutes <= 0 && seconds <= 0) grayFromIndex = 5;
-    
-    final items = [('YEAR', years, 0), ('MONTH', months, 1), ('DAY', days, 2), ('HOUR', hours, 3), ('MINUTE', minutes, 4), ('SECOND', seconds, 5)];
+    if (years <= 0 && days <= 0) grayFromIndex = 1;
+    if (years <= 0 && days <= 0 && hours <= 0) grayFromIndex = 2;
+    if (years <= 0 && days <= 0 && hours <= 0 && minutes <= 0) grayFromIndex = 3;
+    if (years <= 0 && days <= 0 && hours <= 0 && minutes <= 0 && seconds <= 0) grayFromIndex = 4;
+
+    final items = [('YRS', years, 0), ('DAY', days, 1), ('HRS', hours, 2), ('MIN', minutes, 3), ('SEC', seconds, 4)];
     
     return Scaffold(
       backgroundColor: Colors.black,
@@ -796,16 +794,14 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
         child: Stack(
           children: [
             GestureDetector(onTap: _handleTap, behavior: HitTestBehavior.opaque, child: Container(width: 100, height: 100, color: Colors.transparent)),
-            Column(
-              children: [
-                const SizedBox(height: 20),
-                Center(child: Text(data.username.toUpperCase(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red, letterSpacing: 4))),
-                const SizedBox(height: 10),
-                Text('BORN: ${data.birthDate.year}-${data.birthDate.month.toString().padLeft(2, '0')}-${data.birthDate.day.toString().padLeft(2, '0')}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                const Spacer(),
-                ...items.map((item) => _CountdownRow(label: item.$1, value: item.$2, isZero: item.$3 >= grayFromIndex)),
-                const Spacer(),
-              ],
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: items
+                    .map((item) => _CountdownRow(label: item.$1, value: item.$2, isWhite: item.$3 > grayFromIndex))
+                    .toList(),
+              ),
             ),
             if (_showSettings)
               Positioned(
@@ -826,8 +822,8 @@ class _MainCountdownScreenState extends State<MainCountdownScreen> {
 class _CountdownRow extends StatelessWidget {
   final String label;
   final int value;
-  final bool isZero;
-  const _CountdownRow({required this.label, required this.value, required this.isZero});
+  final bool isWhite;
+  const _CountdownRow({required this.label, required this.value, required this.isWhite});
 
   @override
   Widget build(BuildContext context) {
@@ -852,7 +848,7 @@ class _CountdownRow extends StatelessWidget {
                   fontFamily: 'Roboto',
                   fontSize: fontSize,
                   fontWeight: FontWeight.w900,
-                  color: isZero ? Colors.grey : Colors.red,
+                  color: isWhite ? Colors.white : const Color(0xFFCC0000),
                   height: 1,
                   letterSpacing: 4,
                 ),
@@ -871,7 +867,7 @@ class _CountdownRow extends StatelessWidget {
                   fontFamily: 'Roboto',
                   fontSize: labelFontSize,
                   fontWeight: FontWeight.w600,
-                  color: isZero ? Colors.grey.shade600 : Colors.grey.shade400,
+                  color: isWhite ? Colors.white54 : Colors.grey.shade400,
                 ),
               ),
             ),
