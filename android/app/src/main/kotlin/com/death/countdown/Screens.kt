@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.death.countdown
 
 import android.content.Intent
@@ -17,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.util.Random
+import kotlin.random.Random
 
 // ==================== Navigation ====================
 sealed class Screen {
@@ -391,8 +395,11 @@ private fun UserSetupScreen(onStart: (CountdownData) -> Unit) {
                 border = BorderStroke(1.dp, DarkRed.copy(alpha = 0.8f)),
                 modifier = Modifier.fillMaxWidth().clickable { showPicker = true }
             ) {
-                Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         date?.let { "%04d-%02d-%02d".format(it.year, it.monthValue, it.dayOfMonth) } ?: "Select Date",
                         color = if (date != null) Color.White else Color.Gray, fontSize = 18.sp,
@@ -659,6 +666,7 @@ private const val pageSize = 30
 @Composable
 private fun SearchUsersScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
     val users = remember { mutableStateListOf<SearchUser>() }
     var loading by remember { mutableStateOf(true) }
     var loadingMore by remember { mutableStateOf(false) }
@@ -717,7 +725,7 @@ private fun SearchUsersScreen(onBack: () -> Unit) {
                 actions = {
                     IconButton(onClick = {
                         users.add(0, generateRandomUser())
-                        listState.scrollToItem(0)
+                        scope.launch { listState.scrollToItem(0) }
                     }) { Icon(Icons.Default.Add, null, tint = DarkRed) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
@@ -734,7 +742,7 @@ private fun SearchUsersScreen(onBack: () -> Unit) {
                     val idx = filtered.second
                     if (query.isNotBlank() && idx != null) {
                         IconButton(onClick = {
-                            listState.animateScrollToItem(idx)
+                            scope.launch { listState.animateScrollToItem(idx) }
                         }) { Icon(Icons.Default.MyLocation, null, tint = DarkRed) }
                     }
                 },
@@ -796,7 +804,7 @@ private fun SearchUsersScreen(onBack: () -> Unit) {
     }
 }
 
-private val rng = Random()
+private val rng = Random.Default
 private fun generateUsers(n: Int = pageSize): List<SearchUser> {
     val out = ArrayList<SearchUser>(n)
     val now = LocalDateTime.now()
