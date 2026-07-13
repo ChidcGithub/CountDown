@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -22,9 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -427,7 +430,7 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
     LaunchedEffect(Unit) {
         while (isActive) { delay(1000); tick++ }
     }
-    Box(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(Color.Black)
@@ -439,6 +442,15 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
             },
         contentAlignment = Alignment.Center
     ) {
+        // Target row width = 85% of screen.
+        // Row content = 2-digit number (monospace char ≈ 0.6 * font) + 12dp spacing + 3-char label (font/3).
+        // 1.2X + 12dp + 0.6X = 1.8X + 12dp = targetW  ->  X = (targetW - 12dp) / 1.8
+        val density = LocalDensity.current
+        val targetWidthPx = with(density) { maxWidth.toPx() * 0.85f }
+        val spacingPx = with(density) { 12.dp.toPx() }
+        val numberSize = with(density) { ((targetWidthPx - spacingPx) / 1.8f).toSp() }
+        val labelSize = numberSize / 3f
+
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val years = remember(tick) { data.years }
             val days = remember(tick) { data.days }
@@ -459,7 +471,13 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
             if (years <= 0 && days <= 0 && hours <= 0 && minutes <= 0) grayFromIndex = 3
             if (years <= 0 && days <= 0 && hours <= 0 && minutes <= 0 && seconds <= 0) grayFromIndex = 4
             items.forEach { (label, value, idx) ->
-                CountdownRow(label = label, value = value, isWhite = idx > grayFromIndex)
+                CountdownRow(
+                    label = label,
+                    value = value,
+                    isWhite = idx > grayFromIndex,
+                    numberSize = numberSize,
+                    labelSize = labelSize,
+                )
             }
         }
         if (showSettings) {
@@ -472,22 +490,28 @@ private fun MainCountdownScreen(data: CountdownData, onOpenSettings: () -> Unit)
 }
 
 @Composable
-private fun CountdownRow(label: String, value: Long, isWhite: Boolean) {
+private fun CountdownRow(
+    label: String,
+    value: Long,
+    isWhite: Boolean,
+    numberSize: TextUnit,
+    labelSize: TextUnit,
+) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Bottom,
         modifier = Modifier.padding(vertical = 4.dp)
     ) {
         Text(
             value.toString().padStart(2, '0'),
             color = if (isWhite) NumberWhite else DarkRed,
-            fontSize = 100.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp,
+            fontSize = numberSize, fontWeight = FontWeight.Black, letterSpacing = 4.sp,
             fontFamily = FontFamily.Monospace
         )
         Spacer(Modifier.width(12.dp))
         Text(
             label,
             color = if (isWhite) Color.White.copy(alpha = 0.5f) else LabelGray,
-            fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+            fontSize = labelSize, fontWeight = FontWeight.SemiBold,
             fontFamily = FontFamily.Monospace
         )
     }
