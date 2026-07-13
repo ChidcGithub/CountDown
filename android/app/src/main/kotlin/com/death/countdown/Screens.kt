@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 
 package com.death.countdown
 
@@ -10,8 +10,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.autofill.AutofillType
-import androidx.compose.foundation.autofill.autofill
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -21,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -397,10 +399,7 @@ private fun UserSetupScreen(onStart: (CountdownData) -> Unit) {
                 value = name, onValueChange = { name = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .autofill(
-                        autofillTypes = listOf(AutofillType.Username),
-                        onFill = { name = it },
-                    ),
+                    .semantics { contentType = ContentType.Username },
                 placeholder = { Text("Username", color = Color.Gray) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -539,9 +538,11 @@ private fun CountdownRow(
     ) {
         BasicText(
             text = value.toString().padStart(2, '0'),
-            color = { if (isWhite) NumberWhite else DarkRed },
-            fontFamily = AppFontFamily,
-            fontWeight = FontWeight.Black,
+            style = TextStyle(
+                color = if (isWhite) NumberWhite else DarkRed,
+                fontFamily = AppFontFamily,
+                fontWeight = FontWeight.Black,
+            ),
             maxLines = 1,
             autoSize = TextAutoSize.StepBased(
                 minFontSize = 10.sp,
